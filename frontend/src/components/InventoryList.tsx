@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useInventoryItems, useDeleteInventoryItem } from '@/hooks/useApi';
 import { InventoryItem } from '@/lib/api';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Table,
   TableBody,
@@ -86,6 +87,71 @@ export function InventoryList() {
 
   const itemSummary = getItemSummary();
 
+  // Mobile card component for inventory items
+  const MobileInventoryCard = ({ item }: { item: InventoryItem }) => (
+    <Card className={`${isExpired(item.expirationDate) ? 'bg-red-50 border-red-200' : ''}`}>
+      <CardHeader className="pb-3">
+        <CardTitle className="flex items-center justify-between text-base">
+          <div className="flex items-center gap-2">
+            <span className="truncate">{item.name}</span>
+            {isExpired(item.expirationDate) && (
+              <AlertTriangle className="h-4 w-4 text-red-500 flex-shrink-0" />
+            )}
+          </div>
+          <span className="text-sm text-muted-foreground">#{item.id}</span>
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        <div className="grid grid-cols-2 gap-3 text-sm">
+          <div>
+            <p className="font-medium">Quantity</p>
+            <p className="text-lg font-semibold">{item.quantity}</p>
+          </div>
+          <div>
+            <p className="font-medium">Status</p>
+            <div className="mt-1">
+              {getExpirationBadge(item.expirationDate)}
+            </div>
+          </div>
+        </div>
+        <div className="space-y-2 text-sm">
+          <div>
+            <p className="font-medium">Expiration Date</p>
+            <p className="text-muted-foreground">
+              {new Date(item.expirationDate).toLocaleDateString()}
+            </p>
+          </div>
+          <div>
+            <p className="font-medium">Created</p>
+            <p className="text-muted-foreground">
+              {new Date(item.createdAt).toLocaleDateString()}
+            </p>
+          </div>
+        </div>
+        <div className="flex gap-2 pt-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setEditingItem(item)}
+            className="flex-1"
+          >
+            <Edit className="h-4 w-4 mr-2" />
+            Edit
+          </Button>
+          <Button
+            variant="destructive"
+            size="sm"
+            onClick={() => setDeletingItemId(item.id)}
+            className="flex-1"
+          >
+            <Trash2 className="h-4 w-4 mr-2" />
+            Delete
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  );
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-8">
@@ -104,13 +170,13 @@ export function InventoryList() {
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <div className="flex items-center gap-4">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
           <div className="flex items-center gap-2">
-            <Package className="h-6 w-6" />
-            <h2 className="text-2xl font-bold">Inventory</h2>
+            <Package className="h-5 w-5 md:h-6 md:w-6" />
+            <h2 className="text-xl md:text-2xl font-bold">Inventory</h2>
             {items && (
-              <span className="text-sm text-muted-foreground ml-2">
+              <span className="text-sm text-muted-foreground">
                 ({items.length} items)
               </span>
             )}
@@ -119,22 +185,25 @@ export function InventoryList() {
             variant="outline"
             size="sm"
             onClick={() => setShowSummary(!showSummary)}
+            className="w-full sm:w-auto"
           >
             <BarChart3 className="h-4 w-4 mr-2" />
             {showSummary ? 'Hide' : 'Show'} Summary
           </Button>
         </div>
-        <Button onClick={() => setIsCreateDialogOpen(true)}>
+        <Button onClick={() => setIsCreateDialogOpen(true)} className="w-full sm:w-auto">
           <Plus className="h-4 w-4 mr-2" />
           Add Item
         </Button>
       </div>
 
       {showSummary && (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {Object.entries(itemSummary).map(([name, summary]) => (
             <div key={name} className="p-4 border rounded-lg">
-              <h3 className="font-semibold text-lg mb-2">{name}</h3>
+              <h3 className="font-semibold text-base md:text-lg mb-2 truncate" title={name}>
+                {name}
+              </h3>
               <div className="space-y-1 text-sm">
                 <p>Total Quantity: <span className="font-medium">{summary.totalQuantity}</span></p>
                 <p>Batches: <span className="font-medium">{summary.items.length}</span></p>
@@ -154,67 +223,93 @@ export function InventoryList() {
         </div>
       )}
 
-      <Table>
-        <TableCaption>
-          Multiple items can have the same name but different quantities and expiration dates.
-        </TableCaption>
-        <TableHeader>
-          <TableRow>
-            <TableHead>ID</TableHead>
-            <TableHead>Name</TableHead>
-            <TableHead>Quantity</TableHead>
-            <TableHead>Expiration Date</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead>Created At</TableHead>
-            <TableHead className="text-right">Actions</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {items?.map((item) => (
-            <TableRow key={item.id} className={isExpired(item.expirationDate) ? 'bg-red-50' : ''}>
-              <TableCell className="font-medium">{item.id}</TableCell>
-              <TableCell className="flex items-center gap-2">
-                {item.name}
-                {isExpired(item.expirationDate) && (
-                  <AlertTriangle className="h-4 w-4 text-red-500" />
-                )}
-              </TableCell>
-              <TableCell>{item.quantity}</TableCell>
-              <TableCell>
-                {new Date(item.expirationDate).toLocaleDateString()}
-              </TableCell>
-              <TableCell>
-                {getExpirationBadge(item.expirationDate)}
-              </TableCell>
-              <TableCell>
-                {new Date(item.createdAt).toLocaleDateString()}
-              </TableCell>
-              <TableCell className="text-right">
-                <div className="flex justify-end gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setEditingItem(item)}
-                  >
-                    <Edit className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    onClick={() => setDeletingItemId(item.id)}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+      {/* Desktop Table View */}
+      <div className="hidden md:block">
+        <div className="overflow-x-auto">
+          <Table>
+            <TableCaption>
+              Multiple items can have the same name but different quantities and expiration dates.
+            </TableCaption>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-16">ID</TableHead>
+                <TableHead className="min-w-[120px]">Name</TableHead>
+                <TableHead className="min-w-[80px]">Quantity</TableHead>
+                <TableHead className="min-w-[120px]">Expiration Date</TableHead>
+                <TableHead className="min-w-[100px]">Status</TableHead>
+                <TableHead className="min-w-[120px]">Created At</TableHead>
+                <TableHead className="text-right min-w-[100px]">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {items?.map((item) => (
+                <TableRow key={item.id} className={isExpired(item.expirationDate) ? 'bg-red-50' : ''}>
+                  <TableCell className="font-medium">{item.id}</TableCell>
+                  <TableCell className="font-medium">
+                    <div className="flex items-center gap-2">
+                      <span className="truncate max-w-[100px]" title={item.name}>
+                        {item.name}
+                      </span>
+                      {isExpired(item.expirationDate) && (
+                        <AlertTriangle className="h-4 w-4 text-red-500 flex-shrink-0" />
+                      )}
+                    </div>
+                  </TableCell>
+                  <TableCell className="font-medium">{item.quantity}</TableCell>
+                  <TableCell className="text-sm">
+                    {new Date(item.expirationDate).toLocaleDateString()}
+                  </TableCell>
+                  <TableCell>
+                    {getExpirationBadge(item.expirationDate)}
+                  </TableCell>
+                  <TableCell className="text-sm">
+                    {new Date(item.createdAt).toLocaleDateString()}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex justify-end gap-1">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setEditingItem(item)}
+                        className="h-9 w-9 p-0"
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => setDeletingItemId(item.id)}
+                        className="h-9 w-9 p-0"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      </div>
+
+      {/* Mobile Card View */}
+      <div className="md:hidden space-y-4">
+        {items?.length === 0 ? (
+          <div className="text-center py-8 text-muted-foreground">
+            <Package className="h-12 w-12 mx-auto mb-4 opacity-50" />
+            <p>No inventory items found</p>
+            <p className="text-sm">Get started by adding your first item</p>
+          </div>
+        ) : (
+          items?.map((item) => (
+            <MobileInventoryCard key={item.id} item={item} />
+          ))
+        )}
+      </div>
 
       {/* Create Item Dialog */}
       <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-        <DialogContent>
+        <DialogContent className="w-[95vw] max-w-md mx-auto">
           <DialogHeader>
             <DialogTitle>Create New Inventory Item</DialogTitle>
             <DialogDescription>
@@ -231,7 +326,7 @@ export function InventoryList() {
 
       {/* Edit Item Dialog */}
       <Dialog open={!!editingItem} onOpenChange={() => setEditingItem(null)}>
-        <DialogContent>
+        <DialogContent className="w-[95vw] max-w-md mx-auto">
           <DialogHeader>
             <DialogTitle>Edit Inventory Item</DialogTitle>
             <DialogDescription>
@@ -250,17 +345,18 @@ export function InventoryList() {
 
       {/* Delete Confirmation Dialog */}
       <Dialog open={!!deletingItemId} onOpenChange={() => setDeletingItemId(null)}>
-        <DialogContent>
+        <DialogContent className="w-[95vw] max-w-md mx-auto">
           <DialogHeader>
             <DialogTitle>Confirm Deletion</DialogTitle>
             <DialogDescription>
               Are you sure you want to delete this inventory item? This action cannot be undone.
             </DialogDescription>
           </DialogHeader>
-          <DialogFooter>
+          <DialogFooter className="flex-col sm:flex-row gap-2">
             <Button
               variant="outline"
               onClick={() => setDeletingItemId(null)}
+              className="w-full sm:w-auto"
             >
               Cancel
             </Button>
@@ -268,12 +364,20 @@ export function InventoryList() {
               variant="destructive"
               onClick={() => deletingItemId && handleDelete(deletingItemId)}
               disabled={deleteItem.isPending}
+              className="w-full sm:w-auto"
             >
               {deleteItem.isPending ? 'Deleting...' : 'Delete'}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Mobile-friendly Inventory Cards */}
+      <div className="block sm:hidden">
+        {items?.map((item) => (
+          <MobileInventoryCard key={item.id} item={item} />
+        ))}
+      </div>
     </div>
   );
 }

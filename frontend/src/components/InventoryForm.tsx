@@ -130,16 +130,17 @@ export function InventoryForm({ item, onSuccess, onCancel }: InventoryFormProps)
           )}
         />
 
-        <div className="flex justify-end gap-2 pt-4">
+        <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2 pt-4">
           <Button
             type="button"
             variant="outline"
             onClick={onCancel}
             disabled={isLoading}
+            className="w-full sm:w-auto"
           >
             Cancel
           </Button>
-          <Button type="submit" disabled={isLoading}>
+          <Button type="submit" disabled={isLoading} className="w-full sm:w-auto">
             {isLoading ? 'Saving...' : isEditing ? 'Update Item' : 'Create Item'}
           </Button>
         </div>

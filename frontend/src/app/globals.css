@@ -120,3 +120,37 @@
     @apply bg-background text-foreground;
   }
 }
+
+@layer utilities {
+  /* Mobile-specific styles */
+  @media (max-width: 640px) {
+    .container {
+      @apply px-4;
+    }
+    
+    /* Ensure dialogs don't overflow on mobile */
+    [data-radix-dialog-content] {
+      @apply w-[95vw] max-w-md;
+    }
+    
+    /* Better button sizing on mobile */
+    .btn-mobile {
+      @apply min-h-[44px] px-4 py-2;
+    }
+    
+    /* Improve table readability on mobile */
+    .table-mobile {
+      @apply text-sm;
+    }
+    
+    /* Better spacing for mobile forms */
+    .form-mobile {
+      @apply space-y-4;
+    }
+    
+    /* Improved touch targets */
+    .touch-target {
+      @apply min-h-[44px] min-w-[44px];
+    }
+  }
+}

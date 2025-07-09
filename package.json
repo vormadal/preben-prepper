@@ -9,6 +9,7 @@
     "start": "node dist/index.js",
     "lint": "eslint src --ext .ts",
     "type-check": "tsc --noEmit",
+    "db": "tsx prisma migrate dev",
     "db:seed": "tsx prisma/seed.ts",
     "db:check": "tsx scripts/check-data.ts"
   },

@@ -60,15 +60,15 @@ export function HealthStatus() {
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
+      <CardHeader className="pb-3">
+        <CardTitle className="flex items-center gap-2 text-lg">
           <Activity className="h-5 w-5" />
           API Health
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="flex items-center gap-2">
-          <Badge variant="default" className="bg-green-500">
+          <Badge variant="default" className="bg-green-500 text-white">
             {health?.status === 'ok' ? 'Online' : 'Unknown'}
           </Badge>
           <span className="text-sm text-muted-foreground">
@@ -76,22 +76,22 @@ export function HealthStatus() {
           </span>
         </div>
         
-        <div className="grid grid-cols-2 gap-4 text-sm">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
           <div className="flex items-center gap-2">
-            <Clock className="h-4 w-4 text-muted-foreground" />
-            <div>
+            <Clock className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+            <div className="min-w-0">
               <p className="font-medium">Uptime</p>
-              <p className="text-muted-foreground">
+              <p className="text-muted-foreground truncate">
                 {health?.uptime ? formatUptime(health.uptime) : 'Unknown'}
               </p>
             </div>
           </div>
           
           <div className="flex items-center gap-2">
-            <Server className="h-4 w-4 text-muted-foreground" />
-            <div>
+            <Server className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+            <div className="min-w-0">
               <p className="font-medium">Last Check</p>
-              <p className="text-muted-foreground">
+              <p className="text-muted-foreground truncate">
                 {health?.timestamp 
                   ? new Date(health.timestamp).toLocaleTimeString()
                   : 'Unknown'
