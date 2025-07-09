@@ -15,8 +15,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Preben Prepper - User Management",
-  description: "User management dashboard for Preben Prepper application",
+  title: "Preben Prepper - Inventory Management",
+  description: "Never let your items expire - track your inventory and get expiration alerts",
   viewport: "width=device-width, initial-scale=1",
 };
 
