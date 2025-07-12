@@ -102,64 +102,43 @@ export function InventoryList() {
 
   // Mobile card component for inventory items
   const MobileInventoryCard = ({ item }: { item: InventoryItem }) => (
-    <Card className={`${isExpired(item.expirationDate) ? 'bg-red-50 border-red-200' : ''}`}>
-      <CardHeader className="pb-3">
+    <Card 
+      className={`${isExpired(item.expirationDate) ? 'bg-red-50 border-red-200' : ''} cursor-pointer hover:shadow-md transition-shadow`}
+      onClick={() => setEditingItem(item)}
+    >
+      <CardHeader className="pb-2">
         <CardTitle className="flex items-center justify-between text-base">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-1 min-w-0">
             <span className="truncate">{getItemName(item)}</span>
-            {isExpired(item.expirationDate) && (
-              <AlertTriangle className="h-4 w-4 text-red-500 flex-shrink-0" />
-            )}
+            <div className="ml-2">
+              {getExpirationBadge(item.expirationDate)}
+            </div>
           </div>
-          <span className="text-sm text-muted-foreground">#{getItemId(item)}</span>
+          <Button
+            variant="ghost"
+            size="lg"
+            onClick={(e) => {
+              e.stopPropagation();
+              setDeletingItemId(getItemId(item));
+            }}
+            className="h-8 w-8 p-0 hover:bg-red-100 hover:text-red-600"
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-3">
+      <CardContent className="space-y-2">
         <div className="grid grid-cols-2 gap-3 text-sm">
           <div>
             <p className="font-medium">Quantity</p>
             <p className="text-lg font-semibold">{getItemQuantity(item)}</p>
           </div>
           <div>
-            <p className="font-medium">Status</p>
-            <div className="mt-1">
-              {getExpirationBadge(item.expirationDate)}
-            </div>
-          </div>
-        </div>
-        <div className="space-y-2 text-sm">
-          <div>
             <p className="font-medium">Expiration Date</p>
             <p className="text-muted-foreground">
               {formatExpirationDate(item.expirationDate)}
             </p>
           </div>
-          <div>
-            <p className="font-medium">Created</p>
-            <p className="text-muted-foreground">
-              {formatCreatedAt(item.createdAt)}
-            </p>
-          </div>
-        </div>
-        <div className="flex gap-2 pt-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setEditingItem(item)}
-            className="flex-1"
-          >
-            <Edit className="h-4 w-4 mr-2" />
-            Edit
-          </Button>
-          <Button
-            variant="destructive"
-            size="sm"
-            onClick={() => setDeletingItemId(getItemId(item))}
-            className="flex-1"
-          >
-            <Trash2 className="h-4 w-4 mr-2" />
-            Delete
-          </Button>
         </div>
       </CardContent>
     </Card>
