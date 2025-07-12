@@ -6,10 +6,20 @@
     "dev": "next dev --turbopack -p 3001",
     "build": "next build",
     "start": "next start -p 3001",
-    "lint": "next lint"
+    "lint": "next lint",
+    "generate-client": "node scripts/generate-client.js",
+    "generate-client:ps1": "pwsh scripts/generate-client.ps1",
+    "test-setup": "pwsh scripts/test-setup.ps1",
+    "prebuild": "npm run generate-client"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.1.1",
+    "@microsoft/kiota-abstractions": "^1.0.0-preview.96",
+    "@microsoft/kiota-http-fetchlibrary": "^1.0.0-preview.96",
+    "@microsoft/kiota-serialization-form": "^1.0.0-preview.96",
+    "@microsoft/kiota-serialization-json": "^1.0.0-preview.96",
+    "@microsoft/kiota-serialization-multipart": "^1.0.0-preview.96",
+    "@microsoft/kiota-serialization-text": "^1.0.0-preview.96",
     "@radix-ui/react-dialog": "^1.1.14",
     "@radix-ui/react-label": "^2.1.7",
     "@radix-ui/react-slot": "^1.2.3",

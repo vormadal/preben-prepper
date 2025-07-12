@@ -91,6 +91,13 @@ const options = {
 const specs = swaggerJsdoc(options);
 
 export const setupSwagger = (app: Express): void => {
+  // Serve the OpenAPI spec as JSON
+  app.get('/api-docs.json', (req, res) => {
+    res.setHeader('Content-Type', 'application/json');
+    res.send(specs);
+  });
+
+  // Serve the Swagger UI
   app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs, {
     explorer: true,
     customCss: '.swagger-ui .topbar { display: none }',

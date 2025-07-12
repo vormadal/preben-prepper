@@ -22,7 +22,7 @@ async function checkData() {
   
   console.log('\n📦 Inventory Items:');
   items.forEach(item => {
-    console.log(`   ${item.id}: ${item.name} - Qty: ${item.quantity}, Expires: ${item.expirationDate.toISOString().split('T')[0]}`);
+    console.log(`   ${item.id}: ${item.name} - Qty: ${item.quantity}, Expires: ${item.expirationDate.split('T')[0]}`);
   });
 
   // Group by name to show duplicates

@@ -1,13 +1,12 @@
-'use client';
+"use client";
 
-import { useEffect } from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { useCreateInventoryItem, useUpdateInventoryItem } from '@/hooks/useApi';
-import { InventoryItem } from '@/lib/api';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { useEffect } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { useCreateInventoryItem, useUpdateInventoryItem } from "@/hooks/useApi";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Form,
   FormControl,
@@ -15,15 +14,20 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@/components/ui/form';
+} from "@/components/ui/form";
+import { InventoryItem } from "@/generated/models";
+import { DateOnly } from "@microsoft/kiota-abstractions";
 
 const inventoryItemSchema = z.object({
-  name: z.string().min(1, 'Name is required'),
-  quantity: z.number().int().min(0, 'Quantity must be a non-negative integer'),
-  expirationDate: z.string().refine((date) => {
-    const parsedDate = new Date(date);
-    return !isNaN(parsedDate.getTime());
-  }, 'Invalid date format'),
+  name: z.string().min(1, "Name is required"),
+  quantity: z.number().int().min(0, "Quantity must be a non-negative integer"),
+  expirationDate: z.date().transform((val) => {
+    return new DateOnly({
+      year: val.getFullYear(),
+      month: val.getMonth() + 1,
+      day: val.getDate(),
+    });
+  }),
 });
 
 type InventoryItemFormData = z.infer<typeof inventoryItemSchema>;
@@ -34,16 +38,20 @@ interface InventoryFormProps {
   onCancel: () => void;
 }
 
-export function InventoryForm({ item, onSuccess, onCancel }: InventoryFormProps) {
+export function InventoryForm({
+  item,
+  onSuccess,
+  onCancel,
+}: InventoryFormProps) {
   const createItem = useCreateInventoryItem();
   const updateItem = useUpdateInventoryItem();
-  
+
   const form = useForm<InventoryItemFormData>({
     resolver: zodResolver(inventoryItemSchema),
     defaultValues: {
-      name: item?.name || '',
+      name: item?.name || "",
       quantity: item?.quantity || 0,
-      expirationDate: item?.expirationDate || '',
+      expirationDate: item?.expirationDate ?? undefined,
     },
   });
 
@@ -53,8 +61,8 @@ export function InventoryForm({ item, onSuccess, onCancel }: InventoryFormProps)
   useEffect(() => {
     if (item) {
       form.reset({
-        name: item.name,
-        quantity: item.quantity,
+        name: item.name || "",
+        quantity: item.quantity || 0,
         expirationDate: item.expirationDate,
       });
     }
@@ -62,7 +70,7 @@ export function InventoryForm({ item, onSuccess, onCancel }: InventoryFormProps)
 
   const onSubmit = async (data: InventoryItemFormData) => {
     try {
-      if (isEditing) {
+      if (isEditing && item?.id) {
         await updateItem.mutateAsync({ id: item.id, data });
       } else {
         await createItem.mutateAsync(data);
@@ -84,18 +92,22 @@ export function InventoryForm({ item, onSuccess, onCancel }: InventoryFormProps)
             <FormItem>
               <FormLabel>Name</FormLabel>
               <FormControl>
-                <Input placeholder="Enter item name (e.g., Rice, Canned Beans)" {...field} />
+                <Input
+                  placeholder="Enter item name (e.g., Rice, Canned Beans)"
+                  {...field}
+                />
               </FormControl>
               <FormMessage />
               {!isEditing && (
                 <p className="text-xs text-muted-foreground mt-1">
-                  Tip: You can add multiple items with the same name for different batches
+                  Tip: You can add multiple items with the same name for
+                  different batches
                 </p>
               )}
             </FormItem>
           )}
         />
-        
+
         <FormField
           control={form.control}
           name="quantity"
@@ -103,12 +115,14 @@ export function InventoryForm({ item, onSuccess, onCancel }: InventoryFormProps)
             <FormItem>
               <FormLabel>Quantity</FormLabel>
               <FormControl>
-                <Input 
-                  type="number" 
+                <Input
+                  type="number"
                   min="0"
-                  placeholder="Enter quantity" 
+                  placeholder="Enter quantity"
                   {...field}
-                  onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                  onChange={(e) =>
+                    field.onChange(parseInt(e.target.value) || 0)
+                  }
                 />
               </FormControl>
               <FormMessage />
@@ -140,8 +154,16 @@ export function InventoryForm({ item, onSuccess, onCancel }: InventoryFormProps)
           >
             Cancel
           </Button>
-          <Button type="submit" disabled={isLoading} className="w-full sm:w-auto">
-            {isLoading ? 'Saving...' : isEditing ? 'Update Item' : 'Create Item'}
+          <Button
+            type="submit"
+            disabled={isLoading}
+            className="w-full sm:w-auto"
+          >
+            {isLoading
+              ? "Saving..."
+              : isEditing
+              ? "Update Item"
+              : "Create Item"}
           </Button>
         </div>
       </form>

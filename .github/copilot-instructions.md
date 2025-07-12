@@ -7,6 +7,7 @@
 - Tanstack Query for data fetching
 - Components should be optimized for mobile over desktop
 - Jest and React Testing Library for testing
+- Kiota to generate the API client from http://localhost:3000/api-docs/
 
 ## Backend Project
 - Node.js application using TypeScript
@@ -36,3 +37,8 @@
 - Implement proper HTTP status codes
 - Include request/response validation with Zod
 - Add comprehensive API documentation with Swagger
+
+## E2E tests
+- use playwright for end-to-end testing
+- tests should cover critical user flows
+- test project is located in the `e2e` directory

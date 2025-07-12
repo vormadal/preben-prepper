@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useInventoryItems, useDeleteInventoryItem } from '@/hooks/useApi';
 import { InventoryItem } from '@/lib/api';
+import { DateOnly } from '@microsoft/kiota-abstractions';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -40,20 +41,22 @@ export function InventoryList() {
     setDeletingItemId(null);
   };
 
-  const isExpiringSoon = (expirationDate: string) => {
-    const expDate = new Date(expirationDate);
+  const isExpiringSoon = (expirationDate: DateOnly | null | undefined) => {
+    if (!expirationDate) return false;
+    const expDate = new Date(expirationDate.toString());
     const today = new Date();
     const daysUntilExpiration = Math.ceil((expDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
     return daysUntilExpiration <= 30;
   };
 
-  const isExpired = (expirationDate: string) => {
-    const expDate = new Date(expirationDate);
+  const isExpired = (expirationDate: DateOnly | null | undefined) => {
+    if (!expirationDate) return false;
+    const expDate = new Date(expirationDate.toString());
     const today = new Date();
     return expDate < today;
   };
 
-  const getExpirationBadge = (expirationDate: string) => {
+  const getExpirationBadge = (expirationDate: DateOnly | null | undefined) => {
     if (isExpired(expirationDate)) {
       return <Badge variant="destructive">Expired</Badge>;
     } else if (isExpiringSoon(expirationDate)) {

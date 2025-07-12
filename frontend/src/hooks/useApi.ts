@@ -1,22 +1,23 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { 
-  apiClient, 
-  User, 
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  apiClient,
+  handleApiError,
+  User,
   InventoryItem,
-  CreateUserRequest, 
-  UpdateUserRequest,
-  CreateInventoryItemRequest,
-  UpdateInventoryItemRequest
-} from '@/lib/api';
-import { toast } from 'sonner';
+  CreateUserRequest,
+} from "@/lib/kiota-api-client";
+import { toast } from "sonner";
+import { UsersPutRequestBody } from "@/generated/api/users/item";
+import { InventoryPostRequestBody } from "@/generated/api/inventory";
+import { InventoryPutRequestBody } from "@/generated/api/inventory/item";
 
 // Query keys
 export const queryKeys = {
-  users: ['users'] as const,
-  user: (id: number) => ['users', id] as const,
-  inventory: ['inventory'] as const,
-  inventoryItem: (id: number) => ['inventory', id] as const,
-  health: ['health'] as const,
+  users: ["users"] as const,
+  user: (id: number) => ["users", id] as const,
+  inventory: ["inventory"] as const,
+  inventoryItem: (id: number) => ["inventory", id] as const,
+  health: ["health"] as const,
 };
 
 // Users queries
@@ -38,47 +39,53 @@ export const useUser = (id: number) => {
 // Users mutations
 export const useCreateUser = () => {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: (data: CreateUserRequest) => apiClient.createUser(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.users });
-      toast.success('User created successfully!');
+      toast.success("User created successfully!");
     },
     onError: (error: Error) => {
-      toast.error(error.message || 'Failed to create user');
+      handleApiError(error);
+      toast.error(error.message || "Failed to create user");
     },
   });
 };
 
 export const useUpdateUser = () => {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
-    mutationFn: ({ id, data }: { id: number; data: UpdateUserRequest }) =>
+    mutationFn: ({ id, data }: { id: number; data: UsersPutRequestBody }) =>
       apiClient.updateUser(id, data),
-    onSuccess: (updatedUser) => {
+    onSuccess: (updatedUser: User) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.users });
-      queryClient.setQueryData(queryKeys.user(updatedUser.id), updatedUser);
-      toast.success('User updated successfully!');
+      queryClient.setQueryData(
+        queryKeys.user(updatedUser.id ?? -1),
+        updatedUser
+      );
+      toast.success("User updated successfully!");
     },
     onError: (error: Error) => {
-      toast.error(error.message || 'Failed to update user');
+      handleApiError(error);
+      toast.error(error.message || "Failed to update user");
     },
   });
 };
 
 export const useDeleteUser = () => {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: (id: number) => apiClient.deleteUser(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.users });
-      toast.success('User deleted successfully!');
+      toast.success("User deleted successfully!");
     },
     onError: (error: Error) => {
-      toast.error(error.message || 'Failed to delete user');
+      handleApiError(error);
+      toast.error(error.message || "Failed to delete user");
     },
   });
 };
@@ -111,47 +118,54 @@ export const useInventoryItem = (id: number) => {
 // Inventory mutations
 export const useCreateInventoryItem = () => {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
-    mutationFn: (data: CreateInventoryItemRequest) => apiClient.createInventoryItem(data),
+    mutationFn: (data: InventoryPostRequestBody) =>
+      apiClient.createInventoryItem(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.inventory });
-      toast.success('Inventory item created successfully!');
+      toast.success("Inventory item created successfully!");
     },
     onError: (error: Error) => {
-      toast.error(error.message || 'Failed to create inventory item');
+      handleApiError(error);
+      toast.error(error.message || "Failed to create inventory item");
     },
   });
 };
 
 export const useUpdateInventoryItem = () => {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
-    mutationFn: ({ id, data }: { id: number; data: UpdateInventoryItemRequest }) =>
+    mutationFn: ({ id, data }: { id: number; data: InventoryPutRequestBody }) =>
       apiClient.updateInventoryItem(id, data),
-    onSuccess: (updatedItem) => {
+    onSuccess: (updatedItem: InventoryItem) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.inventory });
-      queryClient.setQueryData(queryKeys.inventoryItem(updatedItem.id), updatedItem);
-      toast.success('Inventory item updated successfully!');
+      queryClient.setQueryData(
+        queryKeys.inventoryItem(updatedItem.id ?? -1),
+        updatedItem
+      );
+      toast.success("Inventory item updated successfully!");
     },
     onError: (error: Error) => {
-      toast.error(error.message || 'Failed to update inventory item');
+      handleApiError(error);
+      toast.error(error.message || "Failed to update inventory item");
     },
   });
 };
 
 export const useDeleteInventoryItem = () => {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: (id: number) => apiClient.deleteInventoryItem(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.inventory });
-      toast.success('Inventory item deleted successfully!');
+      toast.success("Inventory item deleted successfully!");
     },
     onError: (error: Error) => {
-      toast.error(error.message || 'Failed to delete inventory item');
+      handleApiError(error);
+      toast.error(error.message || "Failed to delete inventory item");
     },
   });
 };

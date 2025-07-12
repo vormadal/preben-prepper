@@ -1,24 +1,26 @@
 'use client';
 
 import { ExpiringItemsWidget } from "@/components/ExpiringItemsWidget";
-import { HealthStatus } from "@/components/HealthStatus";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Package, Settings, AlertTriangle, TrendingUp } from "lucide-react";
 import Link from "next/link";
 import { useInventoryItems } from "@/hooks/useApi";
+import { DateOnly } from "@microsoft/kiota-abstractions";
 
 export default function Home() {
   const { data: items } = useInventoryItems();
 
-  const isExpired = (expirationDate: string) => {
-    const expDate = new Date(expirationDate);
+  const isExpired = (expirationDate: DateOnly | null | undefined) => {
+    if (!expirationDate) return false;
+    const expDate = new Date(expirationDate.toString());
     const today = new Date();
     return expDate < today;
   };
 
-  const isExpiringSoon = (expirationDate: string) => {
-    const expDate = new Date(expirationDate);
+  const isExpiringSoon = (expirationDate: DateOnly | null | undefined) => {
+    if (!expirationDate) return false;
+    const expDate = new Date(expirationDate.toString());
     const today = new Date();
     const daysUntilExpiration = Math.ceil((expDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
     return daysUntilExpiration <= 30 && daysUntilExpiration >= 0;

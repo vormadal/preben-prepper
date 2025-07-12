@@ -29,7 +29,7 @@ const router = Router();
 router.get('/', (req: Request, res: Response): void => {
   res.json({
     status: 'ok',
-    timestamp: new Date().toISOString(),
+    timestamp: new Date(),
     uptime: process.uptime(),
   });
 });
