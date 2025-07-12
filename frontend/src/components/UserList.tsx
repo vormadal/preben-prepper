@@ -1,10 +1,9 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useUsers, useDeleteUser } from '@/hooks/useApi';
-import { User } from '@/lib/api';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useState } from "react";
+import { useUsers, useDeleteUser } from "@/hooks/useApi";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Table,
   TableBody,
@@ -13,7 +12,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
+} from "@/components/ui/table";
 import {
   Dialog,
   DialogContent,
@@ -21,14 +20,15 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
-import { UserForm } from './UserForm';
-import { Edit, Trash2, Plus } from 'lucide-react';
+} from "@/components/ui/dialog";
+import { UserForm } from "./UserForm";
+import { Edit, Trash2, Plus } from "lucide-react";
+import { User } from "@/generated/models";
 
 export function UserList() {
   const { data: users, isLoading, error } = useUsers();
   const deleteUser = useDeleteUser();
-  
+
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [deletingUserId, setDeletingUserId] = useState<number | null>(null);
@@ -50,12 +50,14 @@ export function UserList() {
       <CardContent className="space-y-3">
         <div>
           <p className="font-medium text-sm">Email</p>
-          <p className="text-sm text-muted-foreground break-all">{user.email}</p>
+          <p className="text-sm text-muted-foreground break-all">
+            {user.email}
+          </p>
         </div>
         <div>
           <p className="font-medium text-sm">Created</p>
           <p className="text-sm text-muted-foreground">
-            {new Date(user.createdAt).toLocaleDateString()}
+            {user.createdAt?.toLocaleDateString() ?? "-"}
           </p>
         </div>
         <div className="flex gap-2 pt-2">
@@ -71,7 +73,7 @@ export function UserList() {
           <Button
             variant="destructive"
             size="sm"
-            onClick={() => setDeletingUserId(user.id)}
+            onClick={() => setDeletingUserId(user.id ?? null)}
             className="flex-1"
           >
             <Trash2 className="h-4 w-4 mr-2" />
@@ -102,7 +104,10 @@ export function UserList() {
     <div className="space-y-4">
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
         <h2 className="text-xl md:text-2xl font-bold">Users</h2>
-        <Button onClick={() => setIsCreateDialogOpen(true)} className="w-full sm:w-auto">
+        <Button
+          onClick={() => setIsCreateDialogOpen(true)}
+          className="w-full sm:w-auto"
+        >
           <Plus className="h-4 w-4 mr-2" />
           Add User
         </Button>
@@ -119,7 +124,9 @@ export function UserList() {
                 <TableHead className="min-w-[120px]">Name</TableHead>
                 <TableHead className="min-w-[180px]">Email</TableHead>
                 <TableHead className="min-w-[120px]">Created At</TableHead>
-                <TableHead className="text-right min-w-[100px]">Actions</TableHead>
+                <TableHead className="text-right min-w-[100px]">
+                  Actions
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -129,7 +136,7 @@ export function UserList() {
                   <TableCell className="font-medium">{user.name}</TableCell>
                   <TableCell className="break-all">{user.email}</TableCell>
                   <TableCell>
-                    {new Date(user.createdAt).toLocaleDateString()}
+                    {user.createdAt?.toLocaleDateString() ?? "-"}
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-1">
@@ -144,7 +151,7 @@ export function UserList() {
                       <Button
                         variant="destructive"
                         size="sm"
-                        onClick={() => setDeletingUserId(user.id)}
+                        onClick={() => setDeletingUserId(user.id ?? null)}
                         className="h-9 w-9 p-0"
                       >
                         <Trash2 className="h-4 w-4" />
@@ -169,9 +176,7 @@ export function UserList() {
             <p className="text-sm">Get started by adding your first user</p>
           </div>
         ) : (
-          users?.map((user) => (
-            <MobileUserCard key={user.id} user={user} />
-          ))
+          users?.map((user) => <MobileUserCard key={user.id} user={user} />)
         )}
       </div>
 
@@ -181,7 +186,8 @@ export function UserList() {
           <DialogHeader>
             <DialogTitle>Create New User</DialogTitle>
             <DialogDescription>
-              Add a new user to the system. Fill in the required information below.
+              Add a new user to the system. Fill in the required information
+              below.
             </DialogDescription>
           </DialogHeader>
           <UserForm
@@ -197,7 +203,8 @@ export function UserList() {
           <DialogHeader>
             <DialogTitle>Edit User</DialogTitle>
             <DialogDescription>
-              Update the user information. You can modify the name and email address.
+              Update the user information. You can modify the name and email
+              address.
             </DialogDescription>
           </DialogHeader>
           {editingUser && (
@@ -211,12 +218,16 @@ export function UserList() {
       </Dialog>
 
       {/* Delete Confirmation Dialog */}
-      <Dialog open={!!deletingUserId} onOpenChange={() => setDeletingUserId(null)}>
+      <Dialog
+        open={!!deletingUserId}
+        onOpenChange={() => setDeletingUserId(null)}
+      >
         <DialogContent className="w-[95vw] max-w-md mx-auto">
           <DialogHeader>
             <DialogTitle>Confirm Deletion</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete this user? This action cannot be undone.
+              Are you sure you want to delete this user? This action cannot be
+              undone.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="flex-col sm:flex-row gap-2">
@@ -233,7 +244,7 @@ export function UserList() {
               disabled={deleteUser.isPending}
               className="w-full sm:w-auto"
             >
-              {deleteUser.isPending ? 'Deleting...' : 'Delete'}
+              {deleteUser.isPending ? "Deleting..." : "Delete"}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -1,13 +1,12 @@
-'use client';
+"use client";
 
-import { useEffect } from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { useCreateUser, useUpdateUser } from '@/hooks/useApi';
-import { User } from '@/lib/api';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { useEffect } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { useCreateUser, useUpdateUser } from "@/hooks/useApi";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Form,
   FormControl,
@@ -15,11 +14,12 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@/components/ui/form';
+} from "@/components/ui/form";
+import { User } from "@/generated/models";
 
 const userSchema = z.object({
-  name: z.string().min(1, 'Name is required'),
-  email: z.string().email('Invalid email format'),
+  name: z.string().min(1, "Name is required"),
+  email: z.string().email("Invalid email format"),
 });
 
 type UserFormData = z.infer<typeof userSchema>;
@@ -33,12 +33,12 @@ interface UserFormProps {
 export function UserForm({ user, onSuccess, onCancel }: UserFormProps) {
   const createUser = useCreateUser();
   const updateUser = useUpdateUser();
-  
+
   const form = useForm<UserFormData>({
     resolver: zodResolver(userSchema),
     defaultValues: {
-      name: user?.name || '',
-      email: user?.email || '',
+      name: user?.name || "",
+      email: user?.email || "",
     },
   });
 
@@ -48,8 +48,8 @@ export function UserForm({ user, onSuccess, onCancel }: UserFormProps) {
   useEffect(() => {
     if (user) {
       form.reset({
-        name: user.name,
-        email: user.email,
+        name: user.name || "",
+        email: user.email || "",
       });
     }
   }, [user, form]);
@@ -57,7 +57,7 @@ export function UserForm({ user, onSuccess, onCancel }: UserFormProps) {
   const onSubmit = async (data: UserFormData) => {
     try {
       if (isEditing) {
-        await updateUser.mutateAsync({ id: user.id, data });
+        await updateUser.mutateAsync({ id: user.id ?? 0, data });
       } else {
         await createUser.mutateAsync(data);
       }
@@ -84,7 +84,7 @@ export function UserForm({ user, onSuccess, onCancel }: UserFormProps) {
             </FormItem>
           )}
         />
-        
+
         <FormField
           control={form.control}
           name="email"
@@ -92,7 +92,11 @@ export function UserForm({ user, onSuccess, onCancel }: UserFormProps) {
             <FormItem>
               <FormLabel>Email</FormLabel>
               <FormControl>
-                <Input type="email" placeholder="Enter email address" {...field} />
+                <Input
+                  type="email"
+                  placeholder="Enter email address"
+                  {...field}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -109,8 +113,16 @@ export function UserForm({ user, onSuccess, onCancel }: UserFormProps) {
           >
             Cancel
           </Button>
-          <Button type="submit" disabled={isLoading} className="w-full sm:w-auto">
-            {isLoading ? 'Saving...' : isEditing ? 'Update User' : 'Create User'}
+          <Button
+            type="submit"
+            disabled={isLoading}
+            className="w-full sm:w-auto"
+          >
+            {isLoading
+              ? "Saving..."
+              : isEditing
+              ? "Update User"
+              : "Create User"}
           </Button>
         </div>
       </form>

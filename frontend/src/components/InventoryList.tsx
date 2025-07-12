@@ -1,9 +1,16 @@
 'use client';
 
-import { useState } from 'react';
-import { useInventoryItems, useDeleteInventoryItem } from '@/hooks/useApi';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import {
   Table,
   TableBody,
@@ -13,31 +20,22 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import { Badge } from '@/components/ui/badge';
-import { InventoryForm } from './InventoryForm';
-import { Edit, Trash2, Plus, Package, AlertTriangle, BarChart3 } from 'lucide-react';
 import { InventoryItem } from '@/generated/models';
+import { useDeleteInventoryItem, useInventoryItems } from '@/hooks/useApi';
 import {
-  isValidInventoryItem,
+  formatCreatedAt,
+  formatExpirationDate,
+  getItemId,
   getItemName,
   getItemQuantity,
-  getItemId,
-  getItemExpirationDate,
-  getItemCreatedAt,
-  isExpiringSoon,
   isExpired,
-  formatExpirationDate,
-  formatCreatedAt,
+  isExpiringSoon,
+  isValidInventoryItem
 } from '@/lib/inventory-utils';
 import { DateOnly } from '@microsoft/kiota-abstractions';
+import { AlertTriangle, BarChart3, Edit, Package, Plus, Trash2 } from 'lucide-react';
+import { useState } from 'react';
+import { InventoryForm } from './InventoryForm';
 
 export function InventoryList() {
   const { data: items, isLoading, error } = useInventoryItems();
