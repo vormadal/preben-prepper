@@ -11,6 +11,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
 import {
   Table,
   TableBody,
@@ -33,7 +34,7 @@ import {
   isValidInventoryItem
 } from '@/lib/inventory-utils';
 import { DateOnly } from '@microsoft/kiota-abstractions';
-import { AlertTriangle, BarChart3, Edit, Package, Plus, Trash2 } from 'lucide-react';
+import { AlertTriangle, BarChart3, Edit, Package, Plus, Search, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { InventoryForm } from './InventoryForm';
 
@@ -45,6 +46,7 @@ export function InventoryList() {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [deletingItemId, setDeletingItemId] = useState<number | null>(null);
   const [showSummary, setShowSummary] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const handleDelete = async (id: number) => {
     await deleteItem.mutateAsync(id);
@@ -90,6 +92,11 @@ export function InventoryList() {
       return acc;
     }, {} as Record<string, { totalQuantity: number; items: InventoryItem[]; expiredCount: number; expiringSoonCount: number; }>);
   };
+
+  // Filter items based on search query
+  const filteredItems = items?.filter(item => 
+    getItemName(item).toLowerCase().includes(searchQuery.toLowerCase())
+  ) || [];
 
   const itemSummary = getItemSummary();
 
@@ -183,7 +190,7 @@ export function InventoryList() {
             <h2 className="text-xl md:text-2xl font-bold">Inventory</h2>
             {items && (
               <span className="text-sm text-muted-foreground">
-                ({items.length} items)
+                ({filteredItems.length}{searchQuery ? ` of ${items.length}` : ''} items)
               </span>
             )}
           </div>
@@ -201,6 +208,18 @@ export function InventoryList() {
           <Plus className="h-4 w-4 mr-2" />
           Add Item
         </Button>
+      </div>
+
+      {/* Search Bar */}
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <Input
+          type="text"
+          placeholder="Search items by name..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="pl-10"
+        />
       </div>
 
       {showSummary && (
@@ -248,7 +267,7 @@ export function InventoryList() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {items?.map((item) => (
+              {filteredItems?.map((item) => (
                 <TableRow key={getItemId(item)} className={isExpired(item.expirationDate) ? 'bg-red-50' : ''}>
                   <TableCell className="font-medium">{getItemId(item)}</TableCell>
                   <TableCell className="font-medium">
@@ -300,14 +319,23 @@ export function InventoryList() {
 
       {/* Mobile Card View */}
       <div className="md:hidden space-y-4">
-        {items?.length === 0 ? (
+        {filteredItems?.length === 0 ? (
           <div className="text-center py-8 text-muted-foreground">
             <Package className="h-12 w-12 mx-auto mb-4 opacity-50" />
-            <p>No inventory items found</p>
-            <p className="text-sm">Get started by adding your first item</p>
+            {searchQuery ? (
+              <>
+                <p>No items found matching "{searchQuery}"</p>
+                <p className="text-sm">Try adjusting your search terms</p>
+              </>
+            ) : (
+              <>
+                <p>No inventory items found</p>
+                <p className="text-sm">Get started by adding your first item</p>
+              </>
+            )}
           </div>
         ) : (
-          items?.map((item) => (
+          filteredItems?.map((item) => (
             <MobileInventoryCard key={getItemId(item)} item={item} />
           ))
         )}
