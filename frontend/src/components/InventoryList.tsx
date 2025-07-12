@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import { useInventoryItems, useDeleteInventoryItem } from '@/hooks/useApi';
-import { DateOnly } from '@microsoft/kiota-abstractions';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -26,6 +25,19 @@ import { Badge } from '@/components/ui/badge';
 import { InventoryForm } from './InventoryForm';
 import { Edit, Trash2, Plus, Package, AlertTriangle, BarChart3 } from 'lucide-react';
 import { InventoryItem } from '@/generated/models';
+import {
+  isValidInventoryItem,
+  getItemName,
+  getItemQuantity,
+  getItemId,
+  getItemExpirationDate,
+  getItemCreatedAt,
+  isExpiringSoon,
+  isExpired,
+  formatExpirationDate,
+  formatCreatedAt,
+} from '@/lib/inventory-utils';
+import { DateOnly } from '@microsoft/kiota-abstractions';
 
 export function InventoryList() {
   const { data: items, isLoading, error } = useInventoryItems();
@@ -41,21 +53,6 @@ export function InventoryList() {
     setDeletingItemId(null);
   };
 
-  const isExpiringSoon = (expirationDate: DateOnly | null | undefined) => {
-    if (!expirationDate) return false;
-    const expDate = new Date(expirationDate.toString());
-    const today = new Date();
-    const daysUntilExpiration = Math.ceil((expDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-    return daysUntilExpiration <= 30;
-  };
-
-  const isExpired = (expirationDate: DateOnly | null | undefined) => {
-    if (!expirationDate) return false;
-    const expDate = new Date(expirationDate.toString());
-    const today = new Date();
-    return expDate < today;
-  };
-
   const getExpirationBadge = (expirationDate: DateOnly | null | undefined) => {
     if (isExpired(expirationDate)) {
       return <Badge variant="destructive">Expired</Badge>;
@@ -68,22 +65,30 @@ export function InventoryList() {
   // Group items by name for summary
   const getItemSummary = () => {
     if (!items) return {};
-    return items.reduce((acc, item) => {
-      if (!acc[item.name]) {
-        acc[item.name] = {
+    
+    const validItems = items.filter(isValidInventoryItem);
+    
+    return validItems.reduce((acc, item) => {
+      const itemName = getItemName(item);
+      
+      if (!acc[itemName]) {
+        acc[itemName] = {
           totalQuantity: 0,
           items: [],
           expiredCount: 0,
           expiringSoonCount: 0,
         };
       }
-      acc[item.name].totalQuantity += item.quantity;
-      acc[item.name].items.push(item);
+      
+      acc[itemName].totalQuantity += getItemQuantity(item);
+      acc[itemName].items.push(item);
+      
       if (isExpired(item.expirationDate)) {
-        acc[item.name].expiredCount++;
+        acc[itemName].expiredCount++;
       } else if (isExpiringSoon(item.expirationDate)) {
-        acc[item.name].expiringSoonCount++;
+        acc[itemName].expiringSoonCount++;
       }
+      
       return acc;
     }, {} as Record<string, { totalQuantity: number; items: InventoryItem[]; expiredCount: number; expiringSoonCount: number; }>);
   };
@@ -96,19 +101,19 @@ export function InventoryList() {
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center justify-between text-base">
           <div className="flex items-center gap-2">
-            <span className="truncate">{item.name}</span>
+            <span className="truncate">{getItemName(item)}</span>
             {isExpired(item.expirationDate) && (
               <AlertTriangle className="h-4 w-4 text-red-500 flex-shrink-0" />
             )}
           </div>
-          <span className="text-sm text-muted-foreground">#{item.id}</span>
+          <span className="text-sm text-muted-foreground">#{getItemId(item)}</span>
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
         <div className="grid grid-cols-2 gap-3 text-sm">
           <div>
             <p className="font-medium">Quantity</p>
-            <p className="text-lg font-semibold">{item.quantity}</p>
+            <p className="text-lg font-semibold">{getItemQuantity(item)}</p>
           </div>
           <div>
             <p className="font-medium">Status</p>
@@ -121,13 +126,13 @@ export function InventoryList() {
           <div>
             <p className="font-medium">Expiration Date</p>
             <p className="text-muted-foreground">
-              {new Date(item.expirationDate).toLocaleDateString()}
+              {formatExpirationDate(item.expirationDate)}
             </p>
           </div>
           <div>
             <p className="font-medium">Created</p>
             <p className="text-muted-foreground">
-              {new Date(item.createdAt).toLocaleDateString()}
+              {formatCreatedAt(item.createdAt)}
             </p>
           </div>
         </div>
@@ -144,7 +149,7 @@ export function InventoryList() {
           <Button
             variant="destructive"
             size="sm"
-            onClick={() => setDeletingItemId(item.id)}
+            onClick={() => setDeletingItemId(getItemId(item))}
             className="flex-1"
           >
             <Trash2 className="h-4 w-4 mr-2" />
@@ -246,27 +251,27 @@ export function InventoryList() {
             </TableHeader>
             <TableBody>
               {items?.map((item) => (
-                <TableRow key={item.id} className={isExpired(item.expirationDate) ? 'bg-red-50' : ''}>
-                  <TableCell className="font-medium">{item.id}</TableCell>
+                <TableRow key={getItemId(item)} className={isExpired(item.expirationDate) ? 'bg-red-50' : ''}>
+                  <TableCell className="font-medium">{getItemId(item)}</TableCell>
                   <TableCell className="font-medium">
                     <div className="flex items-center gap-2">
-                      <span className="truncate max-w-[100px]" title={item.name}>
-                        {item.name}
+                      <span className="truncate max-w-[100px]" title={getItemName(item)}>
+                        {getItemName(item)}
                       </span>
                       {isExpired(item.expirationDate) && (
                         <AlertTriangle className="h-4 w-4 text-red-500 flex-shrink-0" />
                       )}
                     </div>
                   </TableCell>
-                  <TableCell className="font-medium">{item.quantity}</TableCell>
+                  <TableCell className="font-medium">{getItemQuantity(item)}</TableCell>
                   <TableCell className="text-sm">
-                    {new Date(item.expirationDate).toLocaleDateString()}
+                    {formatExpirationDate(item.expirationDate)}
                   </TableCell>
                   <TableCell>
                     {getExpirationBadge(item.expirationDate)}
                   </TableCell>
                   <TableCell className="text-sm">
-                    {new Date(item.createdAt).toLocaleDateString()}
+                    {formatCreatedAt(item.createdAt)}
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-1">
@@ -281,7 +286,7 @@ export function InventoryList() {
                       <Button
                         variant="destructive"
                         size="sm"
-                        onClick={() => setDeletingItemId(item.id)}
+                        onClick={() => setDeletingItemId(getItemId(item))}
                         className="h-9 w-9 p-0"
                       >
                         <Trash2 className="h-4 w-4" />
@@ -305,7 +310,7 @@ export function InventoryList() {
           </div>
         ) : (
           items?.map((item) => (
-            <MobileInventoryCard key={item.id} item={item} />
+            <MobileInventoryCard key={getItemId(item)} item={item} />
           ))
         )}
       </div>
@@ -374,13 +379,6 @@ export function InventoryList() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
-      {/* Mobile-friendly Inventory Cards */}
-      <div className="block sm:hidden">
-        {items?.map((item) => (
-          <MobileInventoryCard key={item.id} item={item} />
-        ))}
-      </div>
     </div>
   );
 }
