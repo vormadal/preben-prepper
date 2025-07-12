@@ -106,7 +106,7 @@ export function InventoryList() {
       className={`${isExpired(item.expirationDate) ? 'bg-red-50 border-red-200' : ''} cursor-pointer hover:shadow-md transition-shadow`}
       onClick={() => setEditingItem(item)}
     >
-      <CardHeader className="pb-2">
+      <CardHeader className="pb-0">
         <CardTitle className="flex items-center justify-between text-base">
           <div className="flex items-center gap-2 flex-1 min-w-0">
             <span className="truncate">{getItemName(item)}</span>
@@ -127,17 +127,14 @@ export function InventoryList() {
           </Button>
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-2">
-        <div className="grid grid-cols-2 gap-3 text-sm">
-          <div>
-            <p className="font-medium">Quantity</p>
-            <p className="text-lg font-semibold">{getItemQuantity(item)}</p>
+      <CardContent className="pt-0">
+        <div className="flex items-center justify-between text-sm text-muted-foreground">
+          <div className="flex items-center gap-1">
+            <Package className="h-3 w-3" />
+            <span className="font-medium">{getItemQuantity(item)}</span>
           </div>
-          <div>
-            <p className="font-medium">Expiration Date</p>
-            <p className="text-muted-foreground">
-              {formatExpirationDate(item.expirationDate)}
-            </p>
+          <div className="flex items-center gap-1">
+            <span>{formatExpirationDate(item.expirationDate)}</span>
           </div>
         </div>
       </CardContent>
