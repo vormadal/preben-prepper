@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import { useInventoryItems, useDeleteInventoryItem } from '@/hooks/useApi';
-import { InventoryItem } from '@/lib/api';
 import { DateOnly } from '@microsoft/kiota-abstractions';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -26,6 +25,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { InventoryForm } from './InventoryForm';
 import { Edit, Trash2, Plus, Package, AlertTriangle, BarChart3 } from 'lucide-react';
+import { InventoryItem } from '@/generated/models';
 
 export function InventoryList() {
   const { data: items, isLoading, error } = useInventoryItems();

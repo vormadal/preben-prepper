@@ -21,16 +21,29 @@ import { DateOnly } from "@microsoft/kiota-abstractions";
 const inventoryItemSchema = z.object({
   name: z.string().min(1, "Name is required"),
   quantity: z.number().int().min(0, "Quantity must be a non-negative integer"),
-  expirationDate: z.date().transform((val) => {
-    return new DateOnly({
-      year: val.getFullYear(),
-      month: val.getMonth() + 1,
-      day: val.getDate(),
-    });
-  }),
+  expirationDate: z.string().min(1, "Expiration date is required"),
 });
 
 type InventoryItemFormData = z.infer<typeof inventoryItemSchema>;
+
+// Helper function to convert string date to DateOnly
+const convertToDateOnly = (dateString: string): DateOnly => {
+  const date = new Date(dateString);
+  return new DateOnly({
+    year: date.getFullYear(),
+    month: date.getMonth() + 1,
+    day: date.getDate(),
+  });
+};
+
+// Helper function to convert DateOnly to string for form input
+const convertDateOnlyToString = (dateOnly?: DateOnly | null): string => {
+  if (!dateOnly) return "";
+  const year = dateOnly.year.toString();
+  const month = dateOnly.month.toString().padStart(2, "0");
+  const day = dateOnly.day.toString().padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
 
 interface InventoryFormProps {
   item?: InventoryItem;
@@ -51,7 +64,7 @@ export function InventoryForm({
     defaultValues: {
       name: item?.name || "",
       quantity: item?.quantity || 0,
-      expirationDate: item?.expirationDate ?? undefined,
+      expirationDate: convertDateOnlyToString(item?.expirationDate),
     },
   });
 
@@ -63,17 +76,24 @@ export function InventoryForm({
       form.reset({
         name: item.name || "",
         quantity: item.quantity || 0,
-        expirationDate: item.expirationDate,
+        expirationDate: convertDateOnlyToString(item.expirationDate),
       });
     }
   }, [item, form]);
 
   const onSubmit = async (data: InventoryItemFormData) => {
     try {
+      // Convert form data to API format
+      const apiData = {
+        name: data.name,
+        quantity: data.quantity,
+        expirationDate: convertToDateOnly(data.expirationDate),
+      };
+
       if (isEditing && item?.id) {
-        await updateItem.mutateAsync({ id: item.id, data });
+        await updateItem.mutateAsync({ id: item.id, data: apiData });
       } else {
-        await createItem.mutateAsync(data);
+        await createItem.mutateAsync(apiData);
       }
       onSuccess();
       form.reset();
