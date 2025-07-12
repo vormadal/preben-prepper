@@ -40,14 +40,6 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-4 md:py-8 space-y-6 md:space-y-8">
-        <header className="text-center space-y-2 md:space-y-4">
-          <h1 className="text-3xl md:text-4xl font-bold tracking-tight">
-            Preben Prepper
-          </h1>
-          <p className="text-lg md:text-xl text-muted-foreground">
-            Keep track of your items and never let them expire
-          </p>
-        </header>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
           {/* Main content area */}
@@ -115,7 +107,7 @@ export default function Home() {
                   </Link>
                 </Button>
                 <Button variant="outline" asChild className="w-full">
-                  <Link href="/admin#inventory">
+                  <Link href="/inventory">
                     <Package className="h-4 w-4 mr-2" />
                     Manage Inventory
                   </Link>

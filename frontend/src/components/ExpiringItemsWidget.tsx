@@ -197,7 +197,7 @@ export function ExpiringItemsWidget() {
               </p>
             </div>
             <Button asChild className="w-full sm:w-auto">
-              <Link href="/admin">
+              <Link href="/inventory">
                 <Plus className="h-4 w-4 mr-2" />
                 Add New Item
               </Link>
@@ -210,7 +210,7 @@ export function ExpiringItemsWidget() {
             ))}
             <div className="pt-4 border-t">
               <Button asChild variant="outline" className="w-full">
-                <Link href="/admin">View All Items</Link>
+                <Link href="/inventory">View All Items</Link>
               </Button>
             </div>
           </div>
