@@ -8,6 +8,8 @@ import { notFoundHandler } from './middleware/notFoundHandler';
 import userRoutes from './routes/users';
 import inventoryRoutes from './routes/inventory';
 import healthRoutes from './routes/health';
+import adminRecommendedInventoryRoutes from './routes/admin/recommended-inventory';
+import recommendedInventoryRoutes from './routes/recommended-inventory';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -30,6 +32,8 @@ setupSwagger(app);
 app.use('/api/health', healthRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/inventory', inventoryRoutes);
+app.use('/api/recommended-inventory', recommendedInventoryRoutes);
+app.use('/api/admin/recommended-inventory', adminRecommendedInventoryRoutes);
 
 // Error handling middleware
 app.use(notFoundHandler);

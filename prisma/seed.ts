@@ -7,6 +7,7 @@ async function main() {
 
   // Clear existing data
   await prisma.inventoryItem.deleteMany();
+  await prisma.recommendedInventoryItem.deleteMany();
   await prisma.user.deleteMany();
 
   // Seed users
@@ -129,13 +130,111 @@ async function main() {
 
   console.log(`✅ Created ${inventoryItems.length} inventory items`);
 
+  // Seed recommended inventory items
+  const recommendedItems = await Promise.all([
+    prisma.recommendedInventoryItem.create({
+      data: {
+        name: 'Water (per person)',
+        expiresIn: 365, // 1 year
+        quantity: 14, // 2 weeks worth (1 gallon per day)
+        isOptional: false,
+        description: 'Essential drinking water supply. Store 1 gallon per person per day for at least 2 weeks.',
+      },
+    }),
+    prisma.recommendedInventoryItem.create({
+      data: {
+        name: 'Rice',
+        expiresIn: 1095, // 3 years
+        quantity: 20, // 20 lbs
+        isOptional: false,
+        description: 'Long-term carbohydrate source. Store in airtight containers to prevent pests.',
+      },
+    }),
+    prisma.recommendedInventoryItem.create({
+      data: {
+        name: 'Canned Beans',
+        expiresIn: 1095, // 3 years
+        quantity: 24, // 24 cans
+        isOptional: false,
+        description: 'Protein-rich canned goods with long shelf life. Variety pack recommended.',
+      },
+    }),
+    prisma.recommendedInventoryItem.create({
+      data: {
+        name: 'First Aid Kit',
+        expiresIn: 1825, // 5 years
+        quantity: 1,
+        isOptional: false,
+        description: 'Comprehensive first aid supplies including bandages, antiseptic, pain relievers, and emergency medications.',
+      },
+    }),
+    prisma.recommendedInventoryItem.create({
+      data: {
+        name: 'Flashlight',
+        expiresIn: 3650, // 10 years
+        quantity: 3,
+        isOptional: false,
+        description: 'Battery-powered or hand-crank flashlights. Keep extra batteries.',
+      },
+    }),
+    prisma.recommendedInventoryItem.create({
+      data: {
+        name: 'Solar Power Bank',
+        expiresIn: 1825, // 5 years
+        quantity: 1,
+        isOptional: true,
+        description: 'Solar-powered device charger for phones and small electronics during extended outages.',
+      },
+    }),
+    prisma.recommendedInventoryItem.create({
+      data: {
+        name: 'Water Purification Tablets',
+        expiresIn: 1460, // 4 years
+        quantity: 100,
+        isOptional: true,
+        description: 'Emergency water treatment for questionable water sources. Backup to stored water.',
+      },
+    }),
+    prisma.recommendedInventoryItem.create({
+      data: {
+        name: 'Freeze-Dried Meals',
+        expiresIn: 9125, // 25 years
+        quantity: 72, // 3 days worth for family of 4
+        isOptional: true,
+        description: 'Long-term emergency meals with extended shelf life. Just add water.',
+      },
+    }),
+    prisma.recommendedInventoryItem.create({
+      data: {
+        name: 'Emergency Radio',
+        expiresIn: 3650, // 10 years
+        quantity: 1,
+        isOptional: false,
+        description: 'Battery or hand-crank radio for emergency broadcasts and weather alerts.',
+      },
+    }),
+    prisma.recommendedInventoryItem.create({
+      data: {
+        name: 'Sleeping Bags',
+        expiresIn: 3650, // 10 years
+        quantity: 4, // Family of 4
+        isOptional: true,
+        description: 'Cold-weather sleeping bags rated for local winter temperatures.',
+      },
+    }),
+  ]);
+
+  console.log(`✅ Created ${recommendedItems.length} recommended inventory items`);
+
   // Display summary
   const totalUsers = await prisma.user.count();
   const totalInventoryItems = await prisma.inventoryItem.count();
+  const totalRecommendedItems = await prisma.recommendedInventoryItem.count();
   
   console.log('\n📊 Database seeded successfully!');
   console.log(`   Users: ${totalUsers}`);
   console.log(`   Inventory Items: ${totalInventoryItems}`);
+  console.log(`   Recommended Items: ${totalRecommendedItems}`);
   
   // Show duplicate item summary
   const itemGroups = await prisma.inventoryItem.groupBy({

@@ -71,6 +71,48 @@ const options = {
             },
           },
         },
+        RecommendedInventoryItem: {
+          type: 'object',
+          required: ['id', 'name', 'expiresIn', 'quantity', 'isOptional', 'description'],
+          properties: {
+            id: {
+              type: 'integer',
+              description: 'Recommended inventory item ID',
+            },
+            name: {
+              type: 'string',
+              description: 'Item name',
+            },
+            expiresIn: {
+              type: 'integer',
+              minimum: 1,
+              description: 'Number of days until expiration',
+            },
+            quantity: {
+              type: 'integer',
+              minimum: 1,
+              description: 'Recommended quantity',
+            },
+            isOptional: {
+              type: 'boolean',
+              description: 'Whether this item is optional for preppers',
+            },
+            description: {
+              type: 'string',
+              description: 'Item description',
+            },
+            createdAt: {
+              type: 'string',
+              format: 'date-time',
+              description: 'Item creation timestamp',
+            },
+            updatedAt: {
+              type: 'string',
+              format: 'date-time',
+              description: 'Item last update timestamp',
+            },
+          },
+        },
         Error: {
           type: 'object',
           properties: {
@@ -85,7 +127,7 @@ const options = {
       },
     },
   },
-  apis: ['./src/routes/*.ts'], // paths to files containing OpenAPI definitions
+  apis: ['./src/routes/*.ts', './src/routes/**/*.ts'], // paths to files containing OpenAPI definitions
 };
 
 const specs = swaggerJsdoc(options);
