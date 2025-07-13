@@ -1,33 +1,42 @@
 "use client";
 
-import { useState } from "react";
 import { Header } from "@/components/Header";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { InventoryForm } from "@/components/InventoryForm";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
-  ArrowLeft,
-  AlertCircle,
-  Package,
-  Clock,
-  Plus,
-  CheckCircle,
-  XCircle,
-} from "lucide-react";
-import Link from "next/link";
-import {
-  useInventoryItems,
-  useRecommendedInventoryItems,
-  useCreateInventoryFromRecommendation,
+    useCreateInventoryFromRecommendation,
+    useInventoryItems,
+    useRecommendedInventoryItems,
 } from "@/hooks/useApi";
-import { RecommendedInventoryItem } from "@/lib/kiota-api-client";
+import { InventoryItem, RecommendedInventoryItem } from "@/lib/kiota-api-client";
+import { DateOnly } from "@microsoft/kiota-abstractions";
+import {
+    AlertCircle,
+    CheckCircle,
+    Clock,
+    Package,
+    Plus,
+    XCircle
+} from "lucide-react";
+import { useState } from "react";
 
 export default function RecommendationsPage() {
   const { data: inventoryItems } = useInventoryItems();
   const { data: recommendedItems, isLoading } = useRecommendedInventoryItems();
   const createFromRecommendation = useCreateInventoryFromRecommendation();
   const [activeTab, setActiveTab] = useState("unfollowed");
+  const [isFormDialogOpen, setIsFormDialogOpen] = useState(false);
+  const [selectedRecommendation, setSelectedRecommendation] = useState<RecommendedInventoryItem | null>(null);
 
   const getRecommendationStatus = () => {
     if (!inventoryItems || !recommendedItems) {
@@ -66,11 +75,30 @@ export default function RecommendationsPage() {
 
   const handleAddToInventory = async (item: RecommendedInventoryItem) => {
     if (!item.id) return;
-    try {
-      await createFromRecommendation.mutateAsync({ id: item.id });
-    } catch (error) {
-      console.error("Failed to add item to inventory:", error);
+    setSelectedRecommendation(item);
+    setIsFormDialogOpen(true);
+  };
+
+  // Convert recommendation to inventory item for form pre-population
+  const createInventoryItemFromRecommendation = (recommendation: RecommendedInventoryItem): InventoryItem => {
+    // Calculate expiration date based on expiresIn days
+    let expirationDate: DateOnly | null = null;
+    if (recommendation.expiresIn) {
+      const futureDate = new Date();
+      futureDate.setDate(futureDate.getDate() + recommendation.expiresIn);
+      expirationDate = new DateOnly({
+        year: futureDate.getFullYear(),
+        month: futureDate.getMonth() + 1,
+        day: futureDate.getDate(),
+      });
     }
+
+    return {
+      name: recommendation.name || "",
+      quantity: recommendation.quantity || 1,
+      expirationDate: expirationDate,
+      additionalData: {},
+    };
   };
 
   const RecommendationCard = ({
@@ -116,6 +144,12 @@ export default function RecommendationsPage() {
             <Package className="h-4 w-4 text-blue-500" />
             <span>Qty: {item.quantity || "N/A"}</span>
           </div>
+          {item.expiresIn && (
+            <div className="flex items-center gap-2">
+              <Clock className="h-4 w-4 text-orange-500" />
+              <span>Expires: {formatDuration(item.expiresIn)}</span>
+            </div>
+          )}
         </div>
 
         {!isFollowed && (
@@ -286,6 +320,31 @@ export default function RecommendationsPage() {
           </Tabs>
         </div>
       </div>
+
+      {/* Add to Inventory Dialog */}
+      <Dialog open={isFormDialogOpen} onOpenChange={setIsFormDialogOpen}>
+        <DialogContent className="w-[95vw] max-w-md mx-auto">
+          <DialogHeader>
+            <DialogTitle>Add to Inventory</DialogTitle>
+            <DialogDescription>
+              Add this recommended item to your inventory. You can adjust the details before saving.
+            </DialogDescription>
+          </DialogHeader>
+          {selectedRecommendation && (
+            <InventoryForm
+              item={createInventoryItemFromRecommendation(selectedRecommendation)}
+              onSuccess={() => {
+                setIsFormDialogOpen(false);
+                setSelectedRecommendation(null);
+              }}
+              onCancel={() => {
+                setIsFormDialogOpen(false);
+                setSelectedRecommendation(null);
+              }}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

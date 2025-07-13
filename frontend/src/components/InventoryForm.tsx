@@ -68,7 +68,7 @@ export function InventoryForm({
     },
   });
 
-  const isEditing = !!item;
+  const isEditing = !!item?.id;
   const isLoading = createItem.isPending || updateItem.isPending;
 
   useEffect(() => {

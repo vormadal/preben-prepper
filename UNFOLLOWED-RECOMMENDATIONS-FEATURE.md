@@ -1,7 +1,10 @@
 # Unfollowed Recommendations Feature
 
 ## Overview
-This feature helps users track which recommended inventory items they haven't yet added to their actual inventory. It provides a visual indicator on the dashboard and a detailed view of all recommendations.
+This feature helps use3. **Add items**: Click "Add to Inventory" button on unfollowed items to open pre-filled form
+4. **Customize details**: Modify the pre-filled name, quantity, or expiration date as needed
+5. **Save to inventory**: Submit the form to add the item to your inventory
+6. **Track progress**: Watch as items move from "Not Following" to "Following" tabs track which recommended inventory items they haven't yet added to their actual inventory. It provides a visual indicator on the dashboard and a detailed view of all recommendations.
 
 ## Components
 
@@ -26,9 +29,19 @@ This feature helps users track which recommended inventory items they haven't ye
     - Quantity and expiration information
     - Optional/Essential badges
     - Following status badges
-    - "Add to Inventory" button for unfollowed items
+    - "Add to Inventory" button for unfollowed items that opens a pre-filled form
+    - Form dialog with recommendation data pre-populated (name, quantity, calculated expiration date)
   - Responsive grid layout (1-3 columns based on screen size)
   - Loading states and empty states
+
+### 3. **Inventory Form Integration**
+- **Pre-filled Form**: When clicking "Add to Inventory", opens the standard inventory form
+- **Smart Defaults**: 
+  - Name: copied from recommendation
+  - Quantity: copied from recommendation (defaults to 1 if not specified)
+  - Expiration Date: calculated from recommendation's `expiresIn` field (days from today)
+- **Editable**: Users can modify any pre-filled values before saving
+- **Validation**: Uses the same validation as the standard inventory form
 
 ## Logic
 
@@ -70,6 +83,8 @@ The `UnfollowedRecommendationsWidget` is added to the home page dashboard:
 
 - **Quick Overview**: Dashboard widget provides immediate insight into recommendation compliance
 - **Detailed Analysis**: Dedicated page allows thorough review of all recommendations
-- **Actionable Interface**: Direct integration with inventory creation from recommendations
+- **Actionable Interface**: Direct integration with inventory creation via pre-filled forms
+- **Smart Pre-population**: Automatically calculates expiration dates and copies relevant data
+- **Flexible Editing**: Users can modify pre-filled values before saving
 - **Progress Tracking**: Visual feedback on recommendation following progress
 - **Mobile Optimized**: Responsive design works well on all screen sizes
