@@ -1,6 +1,7 @@
 'use client';
 
 import { ExpiringItemsWidget } from "@/components/ExpiringItemsWidget";
+import { UnfollowedRecommendationsWidget } from "@/components/UnfollowedRecommendationsWidget";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Package, Settings, AlertTriangle, TrendingUp } from "lucide-react";
@@ -47,7 +48,7 @@ export default function Home() {
             <ExpiringItemsWidget />
             
             {/* Quick stats */}
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <Card>
                 <CardHeader className="pb-2">
                   <CardTitle className="text-sm font-medium text-muted-foreground">
@@ -89,6 +90,8 @@ export default function Home() {
                   </div>
                 </CardContent>
               </Card>
+
+              <UnfollowedRecommendationsWidget />
             </div>
           </div>
 
