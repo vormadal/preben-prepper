@@ -4,8 +4,13 @@ import { createApiClient } from "../generated/apiClient";
 import {
   User as GeneratedUser,
   InventoryItem as GeneratedInventoryItem,
+  RecommendedInventoryItem as GeneratedRecommendedInventoryItem,
 } from "../generated/models";
 import { UsersPostRequestBody } from "../generated/api/users";
+import { InventoryPostRequestBody } from "../generated/api/inventory";
+import { InventoryPutRequestBody } from "../generated/api/inventory/item";
+import { RecommendedInventoryPostRequestBody } from "../generated/api/admin/recommendedInventory";
+import { CreateInventoryPostRequestBody } from "../generated/api/recommendedInventory/item/createInventory";
 import { HealthGetResponse } from "@/generated/api/health";
 
 // Create the request adapter with anonymous authentication
@@ -109,6 +114,62 @@ class ApiClientWrapper {
   async deleteInventoryItem(id: number): Promise<void> {
     await this.client.api.inventory.byId(id).delete();
   }
+
+  // Recommended Inventory API (User-facing)
+  async getRecommendedInventoryItems(): Promise<GeneratedRecommendedInventoryItem[]> {
+    const response = await this.client.api.recommendedInventory.get();
+    return response || [];
+  }
+
+  async getRecommendedInventoryItem(id: number): Promise<GeneratedRecommendedInventoryItem> {
+    const response = await this.client.api.recommendedInventory.byId(id).get();
+    if (!response) {
+      throw new Error("Recommended inventory item not found");
+    }
+    return response;
+  }
+
+  async createInventoryFromRecommendation(id: number, data?: { quantity?: number; customExpirationDate?: string }): Promise<GeneratedInventoryItem> {
+    const response = await this.client.api.recommendedInventory.byId(id).createInventory.post(data);
+    if (!response) {
+      throw new Error("Failed to create inventory item from recommendation");
+    }
+    return response;
+  }
+
+  // Admin Recommended Inventory API
+  async getAdminRecommendedInventoryItems(): Promise<GeneratedRecommendedInventoryItem[]> {
+    const response = await this.client.api.admin.recommendedInventory.get();
+    return response || [];
+  }
+
+  async getAdminRecommendedInventoryItem(id: number): Promise<GeneratedRecommendedInventoryItem> {
+    const response = await this.client.api.admin.recommendedInventory.byId(id).get();
+    if (!response) {
+      throw new Error("Recommended inventory item not found");
+    }
+    return response;
+  }
+
+  async createRecommendedInventoryItem(data: RecommendedInventoryPostRequestBody): Promise<GeneratedRecommendedInventoryItem> {
+    const response = await this.client.api.admin.recommendedInventory.post(data);
+    if (!response) {
+      throw new Error("Failed to create recommended inventory item");
+    }
+    return response;
+  }
+
+  async updateRecommendedInventoryItem(id: number, data: RecommendedInventoryPostRequestBody): Promise<GeneratedRecommendedInventoryItem> {
+    const response = await this.client.api.admin.recommendedInventory.byId(id).put(data);
+    if (!response) {
+      throw new Error("Failed to update recommended inventory item");
+    }
+    return response;
+  }
+
+  async deleteRecommendedInventoryItem(id: number): Promise<void> {
+    await this.client.api.admin.recommendedInventory.byId(id).delete();
+  }
 }
 
 // Export the wrapper for backward compatibility
@@ -118,8 +179,14 @@ export const apiClient = new ApiClientWrapper();
 export { generatedClient };
 
 // Re-export types from generated models for convenience
-export type { GeneratedUser as User, GeneratedInventoryItem as InventoryItem };
+export type { 
+  GeneratedUser as User, 
+  GeneratedInventoryItem as InventoryItem,
+  GeneratedRecommendedInventoryItem as RecommendedInventoryItem
+};
 export type { UsersPostRequestBody as CreateUserRequest };
+export type { InventoryPostRequestBody, InventoryPutRequestBody };
+export type { RecommendedInventoryPostRequestBody, CreateInventoryPostRequestBody };
 
 // Export all types from generated models
 export * from "../generated/models";

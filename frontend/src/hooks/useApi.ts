@@ -169,3 +169,105 @@ export const useDeleteInventoryItem = () => {
     },
   });
 };
+
+// Recommended Inventory queries (User-facing)
+export const useRecommendedInventoryItems = () => {
+  return useQuery({
+    queryKey: ["recommendedInventory"],
+    queryFn: () => apiClient.getRecommendedInventoryItems(),
+  });
+};
+
+export const useRecommendedInventoryItem = (id: number) => {
+  return useQuery({
+    queryKey: ["recommendedInventory", id],
+    queryFn: () => apiClient.getRecommendedInventoryItem(id),
+    enabled: !!id,
+  });
+};
+
+export const useCreateInventoryFromRecommendation = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, data }: { id: number; data?: { quantity?: number; customExpirationDate?: string } }) =>
+      apiClient.createInventoryFromRecommendation(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.inventory });
+      toast.success("Inventory item created from recommendation!");
+    },
+    onError: (error: Error) => {
+      handleApiError(error);
+      toast.error(error.message || "Failed to create inventory item from recommendation");
+    },
+  });
+};
+
+// Admin Recommended Inventory queries
+export const useAdminRecommendedInventoryItems = () => {
+  return useQuery({
+    queryKey: ["adminRecommendedInventory"],
+    queryFn: () => apiClient.getAdminRecommendedInventoryItems(),
+  });
+};
+
+export const useAdminRecommendedInventoryItem = (id: number) => {
+  return useQuery({
+    queryKey: ["adminRecommendedInventory", id],
+    queryFn: () => apiClient.getAdminRecommendedInventoryItem(id),
+    enabled: !!id,
+  });
+};
+
+export const useCreateRecommendedInventoryItem = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: any) => apiClient.createRecommendedInventoryItem(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["adminRecommendedInventory"] });
+      toast.success("Recommended inventory item created successfully!");
+    },
+    onError: (error: Error) => {
+      handleApiError(error);
+      toast.error(error.message || "Failed to create recommended inventory item");
+    },
+  });
+};
+
+export const useUpdateRecommendedInventoryItem = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, data }: { id: number; data: any }) =>
+      apiClient.updateRecommendedInventoryItem(id, data),
+    onSuccess: (updatedItem: any) => {
+      queryClient.invalidateQueries({ queryKey: ["adminRecommendedInventory"] });
+      queryClient.setQueryData(
+        ["adminRecommendedInventory", updatedItem.id],
+        updatedItem
+      );
+      toast.success("Recommended inventory item updated successfully!");
+    },
+    onError: (error: Error) => {
+      handleApiError(error);
+      toast.error(error.message || "Failed to update recommended inventory item");
+    },
+  });
+};
+
+export const useDeleteRecommendedInventoryItem = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: number) => apiClient.deleteRecommendedInventoryItem(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["adminRecommendedInventory"] });
+      toast.success("Recommended inventory item deleted successfully!");
+    },
+    onError: (error: Error) => {
+      handleApiError(error);
+      toast.error(error.message || "Failed to delete recommended inventory item");
+    },
+  });
+};
