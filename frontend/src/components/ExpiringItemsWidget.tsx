@@ -85,36 +85,19 @@ export function ExpiringItemsWidget() {
             : "bg-yellow-50 border-yellow-200"
         }`}
       >
-        <CardContent className="p-4">
-          <div className="flex items-start justify-between">
-            <div className="flex-1">
-              <div className="flex items-center gap-2 mb-2">
-                <h3 className="font-semibold text-base">{item.name}</h3>
-                {expired && (
-                  <AlertTriangle className="h-4 w-4 text-red-500 flex-shrink-0" />
-                )}
-              </div>
-              <div className="grid grid-cols-2 gap-2 text-sm text-muted-foreground mb-3">
-                <div>
-                  <span className="font-medium">Quantity:</span> {item.quantity}
-                </div>
-                <div>
-                  <span className="font-medium">Expires:</span>{" "}
-                  {item.expirationDate
-                    ? new Date(
-                        item.expirationDate.toString()
-                      ).toLocaleDateString()
-                    : "N/A"}
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                {getExpirationBadge(item.expirationDate)}
-                <span className="text-sm text-muted-foreground">
-                  {expired
-                    ? `Expired ${Math.abs(daysUntilExpiration)} days ago`
-                    : `${daysUntilExpiration} days remaining`}
-                </span>
-              </div>
+        <CardContent className="pt-0 pb-0">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2 flex-1">
+              <h3 className="font-semibold text-sm">{item.name}</h3>
+              {getExpirationBadge(item.expirationDate)}
+            </div>
+            <div className="flex items-center gap-3 text-sm text-muted-foreground">
+              <span>Qty: {item.quantity}</span>
+              <span>
+                {expired
+                  ? `${Math.abs(daysUntilExpiration)}d ago`
+                  : `${daysUntilExpiration}d left`}
+              </span>
             </div>
           </div>
         </CardContent>
