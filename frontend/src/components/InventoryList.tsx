@@ -12,19 +12,9 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import {
-  Table,
-  TableBody,
-  TableCaption,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
 import { InventoryItem } from '@/generated/models';
 import { useDeleteInventoryItem, useInventoryItems } from '@/hooks/useApi';
 import {
-  formatCreatedAt,
   formatExpirationDate,
   getItemId,
   getItemName,
@@ -33,8 +23,7 @@ import {
   isExpiringSoon,
   isValidInventoryItem
 } from '@/lib/inventory-utils';
-import { DateOnly } from '@microsoft/kiota-abstractions';
-import { AlertTriangle, BarChart3, Edit, Package, Plus, Search, Trash2 } from 'lucide-react';
+import { AlertTriangle, ChevronDown, ChevronRight, Package, Plus, Search, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { InventoryForm } from './InventoryForm';
 
@@ -45,21 +34,22 @@ export function InventoryList() {
   const [editingItem, setEditingItem] = useState<InventoryItem | null>(null);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [deletingItemId, setDeletingItemId] = useState<number | null>(null);
-  const [showSummary, setShowSummary] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [expandedSummaryItems, setExpandedSummaryItems] = useState<Set<string>>(new Set());
 
   const handleDelete = async (id: number) => {
     await deleteItem.mutateAsync(id);
     setDeletingItemId(null);
   };
 
-  const getExpirationBadge = (expirationDate: DateOnly | null | undefined) => {
-    if (isExpired(expirationDate)) {
-      return <Badge variant="destructive">Expired</Badge>;
-    } else if (isExpiringSoon(expirationDate)) {
-      return <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">Expires Soon</Badge>;
+  const toggleSummaryItem = (itemName: string) => {
+    const newExpanded = new Set(expandedSummaryItems);
+    if (newExpanded.has(itemName)) {
+      newExpanded.delete(itemName);
+    } else {
+      newExpanded.add(itemName);
     }
-    return <Badge variant="default" className="bg-green-100 text-green-800">Fresh</Badge>;
+    setExpandedSummaryItems(newExpanded);
   };
 
   // Group items by name for summary
@@ -93,52 +83,11 @@ export function InventoryList() {
     }, {} as Record<string, { totalQuantity: number; items: InventoryItem[]; expiredCount: number; expiringSoonCount: number; }>);
   };
 
-  // Filter items based on search query
-  const filteredItems = items?.filter(item => 
-    getItemName(item).toLowerCase().includes(searchQuery.toLowerCase())
-  ) || [];
-
   const itemSummary = getItemSummary();
 
-  // Mobile card component for inventory items
-  const MobileInventoryCard = ({ item }: { item: InventoryItem }) => (
-    <Card 
-      className={`${isExpired(item.expirationDate) ? 'bg-red-50 border-red-200' : ''} cursor-pointer hover:shadow-md transition-shadow`}
-      onClick={() => setEditingItem(item)}
-    >
-      <CardHeader className="pb-0">
-        <CardTitle className="flex items-center justify-between text-base">
-          <div className="flex items-center gap-2 flex-1 min-w-0">
-            <span className="truncate">{getItemName(item)}</span>
-            <div className="ml-2">
-              {getExpirationBadge(item.expirationDate)}
-            </div>
-          </div>
-          <Button
-            variant="ghost"
-            size="lg"
-            onClick={(e) => {
-              e.stopPropagation();
-              setDeletingItemId(getItemId(item));
-            }}
-            className="h-8 w-8 p-0 hover:bg-red-100 hover:text-red-600"
-          >
-            <Trash2 className="h-4 w-4" />
-          </Button>
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="pt-0">
-        <div className="flex items-center justify-between text-sm text-muted-foreground">
-          <div className="flex items-center gap-1">
-            <Package className="h-3 w-3" />
-            <span className="font-medium">{getItemQuantity(item)}</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <span>{formatExpirationDate(item.expirationDate)}</span>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
+  // Filter items based on search query
+  const filteredSummary = Object.entries(itemSummary).filter(([name]) => 
+    name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   if (isLoading) {
@@ -166,19 +115,10 @@ export function InventoryList() {
             <h2 className="text-xl md:text-2xl font-bold">Inventory</h2>
             {items && (
               <span className="text-sm text-muted-foreground">
-                ({filteredItems.length}{searchQuery ? ` of ${items.length}` : ''} items)
+                ({filteredSummary.length}{searchQuery ? ` of ${Object.keys(itemSummary).length}` : ''} item types)
               </span>
             )}
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setShowSummary(!showSummary)}
-            className="w-full sm:w-auto"
-          >
-            <BarChart3 className="h-4 w-4 mr-2" />
-            {showSummary ? 'Hide' : 'Show'} Summary
-          </Button>
         </div>
         <Button onClick={() => setIsCreateDialogOpen(true)} className="w-full sm:w-auto">
           <Plus className="h-4 w-4 mr-2" />
@@ -198,105 +138,10 @@ export function InventoryList() {
         />
       </div>
 
-      {showSummary && (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {Object.entries(itemSummary).map(([name, summary]) => (
-            <div key={name} className="p-4 border rounded-lg">
-              <h3 className="font-semibold text-base md:text-lg mb-2 truncate" title={name}>
-                {name}
-              </h3>
-              <div className="space-y-1 text-sm">
-                <p>Total Quantity: <span className="font-medium">{summary.totalQuantity}</span></p>
-                <p>Batches: <span className="font-medium">{summary.items.length}</span></p>
-                {summary.expiredCount > 0 && (
-                  <p className="text-red-600">
-                    Expired: <span className="font-medium">{summary.expiredCount}</span>
-                  </p>
-                )}
-                {summary.expiringSoonCount > 0 && (
-                  <p className="text-yellow-600">
-                    Expiring Soon: <span className="font-medium">{summary.expiringSoonCount}</span>
-                  </p>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* Desktop Table View */}
-      <div className="hidden md:block">
-        <div className="overflow-x-auto">
-          <Table>
-            <TableCaption>
-              Multiple items can have the same name but different quantities and expiration dates.
-            </TableCaption>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-16">ID</TableHead>
-                <TableHead className="min-w-[120px]">Name</TableHead>
-                <TableHead className="min-w-[80px]">Quantity</TableHead>
-                <TableHead className="min-w-[120px]">Expiration Date</TableHead>
-                <TableHead className="min-w-[100px]">Status</TableHead>
-                <TableHead className="min-w-[120px]">Created At</TableHead>
-                <TableHead className="text-right min-w-[100px]">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredItems?.map((item) => (
-                <TableRow key={getItemId(item)} className={isExpired(item.expirationDate) ? 'bg-red-50' : ''}>
-                  <TableCell className="font-medium">{getItemId(item)}</TableCell>
-                  <TableCell className="font-medium">
-                    <div className="flex items-center gap-2">
-                      <span className="truncate max-w-[100px]" title={getItemName(item)}>
-                        {getItemName(item)}
-                      </span>
-                      {isExpired(item.expirationDate) && (
-                        <AlertTriangle className="h-4 w-4 text-red-500 flex-shrink-0" />
-                      )}
-                    </div>
-                  </TableCell>
-                  <TableCell className="font-medium">{getItemQuantity(item)}</TableCell>
-                  <TableCell className="text-sm">
-                    {formatExpirationDate(item.expirationDate)}
-                  </TableCell>
-                  <TableCell>
-                    {getExpirationBadge(item.expirationDate)}
-                  </TableCell>
-                  <TableCell className="text-sm">
-                    {formatCreatedAt(item.createdAt)}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex justify-end gap-1">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setEditingItem(item)}
-                        className="h-9 w-9 p-0"
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        onClick={() => setDeletingItemId(getItemId(item))}
-                        className="h-9 w-9 p-0"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
-      </div>
-
-      {/* Mobile Card View */}
-      <div className="md:hidden space-y-4">
-        {filteredItems?.length === 0 ? (
-          <div className="text-center py-8 text-muted-foreground">
+      {/* Inventory Summary Cards */}
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {filteredSummary.length === 0 ? (
+          <div className="col-span-full text-center py-8 text-muted-foreground">
             <Package className="h-12 w-12 mx-auto mb-4 opacity-50" />
             {searchQuery ? (
               <>
@@ -311,9 +156,92 @@ export function InventoryList() {
             )}
           </div>
         ) : (
-          filteredItems?.map((item) => (
-            <MobileInventoryCard key={getItemId(item)} item={item} />
-          ))
+          filteredSummary.map(([name, summary]) => {
+            const hasExpired = summary.expiredCount > 0;
+            const hasExpiringSoon = summary.expiringSoonCount > 0;
+            const isExpanded = expandedSummaryItems.has(name);
+            
+            return (
+              <Card key={name} className={`${hasExpired ? 'bg-red-50 border-red-200' : ''}`}>
+                <CardHeader 
+                  className="pb-0 cursor-pointer hover:bg-gray-50 transition-colors"
+                  onClick={() => toggleSummaryItem(name)}
+                >
+                  <CardTitle className="flex items-center justify-between text-base">
+                    <div className="flex items-center gap-2 flex-1 min-w-0">
+                      <span className="truncate" title={name}>{name}</span>
+                      <div className="ml-2">
+                        {hasExpired ? (
+                          <Badge variant="destructive">Expired</Badge>
+                        ) : hasExpiringSoon ? (
+                          <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">Expires Soon</Badge>
+                        ) : (
+                          <Badge variant="default" className="bg-green-100 text-green-800">Fresh</Badge>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {isExpanded ? (
+                        <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                      ) : (
+                        <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                      )}
+                    </div>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="pt-0">
+                  <div className="flex items-center justify-between text-sm text-muted-foreground">
+                    <div className="flex items-center gap-1">
+                      <Package className="h-3 w-3" />
+                      <span className="font-medium">{summary.totalQuantity}</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <span>{summary.items.length} batches</span>
+                    </div>
+                  </div>
+                  
+                  {isExpanded && (
+                    <div className="mt-3 space-y-2 border-t pt-3">
+                      {summary.items.map((item) => (
+                        <div 
+                          key={getItemId(item)} 
+                          className="flex items-center justify-between text-xs p-2 bg-gray-50 rounded cursor-pointer hover:bg-gray-100 transition-colors"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setEditingItem(item);
+                          }}
+                        >
+                          <div className="flex items-center gap-2">
+                            <Package className="h-3 w-3" />
+                            <span className="font-medium">{getItemQuantity(item)}</span>
+                            {isExpired(item.expirationDate) && (
+                              <AlertTriangle className="h-3 w-3 text-red-500" />
+                            )}
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-muted-foreground">
+                              {formatExpirationDate(item.expirationDate)}
+                            </span>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setDeletingItemId(getItemId(item));
+                              }}
+                              className="h-6 w-6 p-0 hover:bg-red-100 hover:text-red-600"
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            );
+          })
         )}
       </div>
 
