@@ -1,5 +1,5 @@
 import { InventoryList } from "@/components/InventoryList";
-import { RecommendedItemsWidget } from "@/components/RecommendedItemsWidget";
+import { MinimalRecommendationsNotice } from "@/components/MinimalRecommendationsNotice";
 
 export default function Inventory() {
   return (
@@ -18,9 +18,9 @@ export default function Inventory() {
             <InventoryList />
           </div>
           
-          {/* Recommended Items Widget */}
+          {/* Minimal Recommendations Notice */}
           <div className="order-1 lg:order-2">
-            <RecommendedItemsWidget />
+            <MinimalRecommendationsNotice />
           </div>
         </div>
       </div>
