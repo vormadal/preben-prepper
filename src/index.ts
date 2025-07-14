@@ -8,6 +8,7 @@ import { notFoundHandler } from './middleware/notFoundHandler';
 import userRoutes from './routes/users';
 import inventoryRoutes from './routes/inventory';
 import healthRoutes from './routes/health';
+import authRoutes from './routes/auth';
 import adminRecommendedInventoryRoutes from './routes/admin/recommended-inventory';
 import recommendedInventoryRoutes from './routes/recommended-inventory';
 
@@ -30,6 +31,7 @@ setupSwagger(app);
 
 // Routes
 app.use('/api/health', healthRoutes);
+app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/inventory', inventoryRoutes);
 app.use('/api/recommended-inventory', recommendedInventoryRoutes);

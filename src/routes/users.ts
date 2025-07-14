@@ -2,6 +2,7 @@ import { Router, Request, Response } from 'express';
 import { validateRequest } from '../middleware/validation';
 import { createUserSchema, updateUserSchema, userParamsSchema } from '../schemas/user';
 import { prisma } from '../lib/prisma';
+import bcrypt from 'bcryptjs';
 
 const router: Router = Router();
 
@@ -25,6 +26,7 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
   try {
     const users = await prisma.user.findMany({
       orderBy: { createdAt: 'desc' },
+      select: { id: true, name: true, email: true, createdAt: true, updatedAt: true }
     });
     res.json(users);
   } catch (error) {
@@ -72,6 +74,7 @@ router.get(
       const { id } = req.params;
       const user = await prisma.user.findUnique({
         where: { id: Number(id) },
+        select: { id: true, name: true, email: true, createdAt: true, updatedAt: true }
       });
       
       if (!user) {
@@ -138,7 +141,7 @@ router.post(
   validateRequest({ body: createUserSchema }),
   async (req: Request, res: Response): Promise<void> => {
     try {
-      const { name, email } = req.body;
+      const { name, email, password } = req.body;
       
       // Check if email already exists
       const existingUser = await prisma.user.findUnique({
@@ -155,8 +158,12 @@ router.post(
         return;
       }
       
+      // Hash the password
+      const hashedPassword = await bcrypt.hash(password, 10);
+      
       const newUser = await prisma.user.create({
-        data: { name, email },
+        data: { name, email, password: hashedPassword },
+        select: { id: true, name: true, email: true, createdAt: true, updatedAt: true }
       });
       
       res.status(201).json(newUser);
@@ -224,7 +231,7 @@ router.put(
   async (req: Request, res: Response): Promise<void> => {
     try {
       const { id } = req.params;
-      const { name, email } = req.body;
+      const { name, email, password } = req.body;
       
       // Check if user exists
       const existingUser = await prisma.user.findUnique({
@@ -261,13 +268,19 @@ router.put(
         }
       }
       
+      // Prepare update data
+      const updateData: any = {};
+      if (name) updateData.name = name;
+      if (email) updateData.email = email;
+      if (password) {
+        updateData.password = await bcrypt.hash(password, 10);
+      }
+      
       // Update user
       const updatedUser = await prisma.user.update({
         where: { id: Number(id) },
-        data: {
-          ...(name && { name }),
-          ...(email && { email }),
-        },
+        data: updateData,
+        select: { id: true, name: true, email: true, createdAt: true, updatedAt: true }
       });
       
       res.json(updatedUser);
