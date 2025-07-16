@@ -9,6 +9,7 @@ import userRoutes from './routes/users';
 import inventoryRoutes from './routes/inventory';
 import healthRoutes from './routes/health';
 import authRoutes from './routes/auth';
+import homeRoutes from './routes/homes';
 import adminRecommendedInventoryRoutes from './routes/admin/recommended-inventory';
 import recommendedInventoryRoutes from './routes/recommended-inventory';
 
@@ -33,6 +34,7 @@ setupSwagger(app);
 app.use('/api/health', healthRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/homes', homeRoutes);
 app.use('/api/inventory', inventoryRoutes);
 app.use('/api/recommended-inventory', recommendedInventoryRoutes);
 app.use('/api/admin/recommended-inventory', adminRecommendedInventoryRoutes);

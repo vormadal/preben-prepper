@@ -31,6 +31,24 @@ export default function SignIn() {
       if (result?.error) {
         setError("Invalid credentials")
       } else {
+        // Get the session to check user ID
+        const session = await getSession()
+        if (session?.user?.id) {
+          // Check if user has a home
+          try {
+            const homeResponse = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3000'}/api/homes?userId=${session.user.id}`)
+            if (homeResponse.ok) {
+              const homes = await homeResponse.json()
+              if (homes.length === 0) {
+                // No homes found, redirect to onboarding
+                router.push("/onboarding")
+                return
+              }
+            }
+          } catch (error) {
+            console.error("Error checking user homes:", error)
+          }
+        }
         router.push("/")
       }
     } catch (error) {

@@ -8,9 +8,12 @@ import { Package, Settings, AlertTriangle, TrendingUp } from "lucide-react";
 import Link from "next/link";
 import { useInventoryItems } from "@/hooks/useApi";
 import { DateOnly } from "@microsoft/kiota-abstractions";
+import { useSessionWithHome } from "@/hooks/useSessionWithHome";
 
 export default function Home() {
-  const { data: items } = useInventoryItems();
+  const { userId, selectedHomeId } = useSessionWithHome();
+  
+  const { data: items } = useInventoryItems(userId, selectedHomeId);
 
   const isExpired = (expirationDate: DateOnly | null | undefined) => {
     if (!expirationDate) return false;

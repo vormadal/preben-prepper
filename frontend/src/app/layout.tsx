@@ -5,6 +5,7 @@ import { QueryProvider } from "@/providers/QueryProvider";
 import AuthProvider from "@/providers/AuthProvider";
 import { Toaster } from "@/components/ui/sonner";
 import { Header } from "@/components/Header";
+import { SelectedHomeProvider } from "@/contexts/SelectedHomeContext";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -34,10 +35,12 @@ export default function RootLayout({
       >
         <AuthProvider>
           <QueryProvider>
-            <Header />
-            <main>
-              {children}
-            </main>
+            <SelectedHomeProvider>
+              <Header />
+              <main>
+                {children}
+              </main>
+            </SelectedHomeProvider>
             <Toaster />
           </QueryProvider>
         </AuthProvider>

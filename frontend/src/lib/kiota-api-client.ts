@@ -13,6 +13,53 @@ import { RecommendedInventoryPostRequestBody } from "../generated/api/admin/reco
 import { CreateInventoryPostRequestBody } from "../generated/api/recommendedInventory/item/createInventory";
 import { HealthGetResponse } from "@/generated/api/health";
 
+// Define Home interface since it may not be generated properly
+export interface Home {
+  id: number;
+  name: string;
+  numberOfAdults?: number;
+  numberOfChildren?: number;
+  numberOfPets?: number;
+  ownerId: number;
+  owner?: {
+    id: number;
+    name: string;
+    email: string;
+  };
+  homeAccesses?: HomeAccess[];
+  _count?: {
+    inventoryItems: number;
+  };
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
+export interface HomeAccess {
+  id: number;
+  userId: number;
+  homeId: number;
+  role: "ADMIN" | "MEMBER";
+  user?: {
+    id: number;
+    name: string;
+    email: string;
+  };
+  home?: {
+    id: number;
+    name: string;
+  };
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
+export interface CreateHomeRequest {
+  name: string;
+  numberOfAdults?: number;
+  numberOfChildren?: number;
+  numberOfPets?: number;
+  ownerId: number;
+}
+
 // Create the request adapter with anonymous authentication
 const authProvider = new AnonymousAuthenticationProvider();
 const requestAdapter = new FetchRequestAdapter(authProvider);
@@ -77,8 +124,15 @@ class ApiClientWrapper {
   }
 
   // Inventory API
-  async getInventoryItems(): Promise<GeneratedInventoryItem[]> {
-    const response = await this.client.api.inventory.get();
+  async getInventoryItems(userId: number, homeId?: number): Promise<GeneratedInventoryItem[]> {
+    const params: any = { userId };
+    if (homeId) {
+      params.homeId = homeId;
+    }
+    
+    const response = await this.client.api.inventory.get({
+      queryParameters: params
+    });
     return response || [];
   }
 
@@ -91,9 +145,12 @@ class ApiClientWrapper {
   }
 
   async createInventoryItem(
-    data: Partial<GeneratedInventoryItem>
+    userId: number,
+    data: Partial<GeneratedInventoryItem> & { homeId: number }
   ): Promise<GeneratedInventoryItem> {
-    const response = await this.client.api.inventory.post(data);
+    const response = await this.client.api.inventory.post(data, {
+      queryParameters: { userId }
+    });
     if (!response) {
       throw new Error("Failed to create inventory item");
     }
@@ -170,6 +227,52 @@ class ApiClientWrapper {
   async deleteRecommendedInventoryItem(id: number): Promise<void> {
     await this.client.api.admin.recommendedInventory.byId(id).delete();
   }
+  
+  // Homes API
+  async getHomes(userId: number): Promise<Home[]> {
+    try {
+      const url = `${API_BASE_URL}/api/homes?userId=${userId}`;
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch homes: ${response.statusText}`);
+      }
+      return await response.json();
+    } catch (error) {
+      throw new Error(`Failed to fetch homes: ${error}`);
+    }
+  }
+
+  async getHome(id: number, userId: number): Promise<Home> {
+    try {
+      const url = `${API_BASE_URL}/api/homes/${id}?userId=${userId}`;
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch home: ${response.statusText}`);
+      }
+      return await response.json();
+    } catch (error) {
+      throw new Error(`Failed to fetch home: ${error}`);
+    }
+  }
+
+  async createHome(data: CreateHomeRequest): Promise<Home> {
+    try {
+      const url = `${API_BASE_URL}/api/homes`;
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      });
+      if (!response.ok) {
+        throw new Error(`Failed to create home: ${response.statusText}`);
+      }
+      return await response.json();
+    } catch (error) {
+      throw new Error(`Failed to create home: ${error}`);
+    }
+  }
 }
 
 // Export the wrapper for backward compatibility
@@ -179,10 +282,10 @@ export const apiClient = new ApiClientWrapper();
 export { generatedClient };
 
 // Re-export types from generated models for convenience
-export type { 
-  GeneratedUser as User, 
+export type {
+  GeneratedUser as User,
   GeneratedInventoryItem as InventoryItem,
-  GeneratedRecommendedInventoryItem as RecommendedInventoryItem
+  GeneratedRecommendedInventoryItem as RecommendedInventoryItem,
 };
 export type { UsersPostRequestBody as CreateUserRequest };
 export type { InventoryPostRequestBody, InventoryPutRequestBody };

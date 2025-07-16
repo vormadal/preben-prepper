@@ -5,6 +5,8 @@ import {
   User,
   InventoryItem,
   CreateUserRequest,
+  Home,
+  CreateHomeRequest,
 } from "@/lib/kiota-api-client";
 import { toast } from "sonner";
 import { UsersPutRequestBody } from "@/generated/api/users/item";
@@ -15,6 +17,8 @@ import { InventoryPutRequestBody } from "@/generated/api/inventory/item";
 export const queryKeys = {
   users: ["users"] as const,
   user: (id: number) => ["users", id] as const,
+  homes: (userId: number) => ["homes", userId] as const,
+  home: (id: number, userId: number) => ["homes", id, userId] as const,
   inventory: ["inventory"] as const,
   inventoryItem: (id: number) => ["inventory", id] as const,
   health: ["health"] as const,
@@ -100,10 +104,16 @@ export const useHealthCheck = () => {
 };
 
 // Inventory queries
-export const useInventoryItems = () => {
+export const useInventoryItems = (userId?: number, homeId?: number) => {
   return useQuery({
-    queryKey: queryKeys.inventory,
-    queryFn: () => apiClient.getInventoryItems(),
+    queryKey: [...queryKeys.inventory, userId, homeId],
+    queryFn: () => {
+      if (!userId) {
+        throw new Error('User ID is required');
+      }
+      return apiClient.getInventoryItems(userId, homeId);
+    },
+    enabled: !!userId,
   });
 };
 
@@ -120,8 +130,8 @@ export const useCreateInventoryItem = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (data: InventoryPostRequestBody) =>
-      apiClient.createInventoryItem(data),
+    mutationFn: ({ userId, data }: { userId: number; data: InventoryPostRequestBody & { homeId: number } }) =>
+      apiClient.createInventoryItem(userId, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.inventory });
       toast.success("Inventory item created successfully!");
@@ -268,6 +278,40 @@ export const useDeleteRecommendedInventoryItem = () => {
     onError: (error: Error) => {
       handleApiError(error);
       toast.error(error.message || "Failed to delete recommended inventory item");
+    },
+  });
+};
+
+// Homes queries
+export const useHomes = (userId: number) => {
+  return useQuery({
+    queryKey: queryKeys.homes(userId),
+    queryFn: () => apiClient.getHomes(userId),
+    enabled: !!userId,
+  });
+};
+
+export const useHome = (id: number, userId: number) => {
+  return useQuery({
+    queryKey: queryKeys.home(id, userId),
+    queryFn: () => apiClient.getHome(id, userId),
+    enabled: !!id && !!userId,
+  });
+};
+
+// Homes mutations
+export const useCreateHome = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: CreateHomeRequest) => apiClient.createHome(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["homes"] });
+      toast.success("Home created successfully!");
+    },
+    onError: (error: Error) => {
+      handleApiError(error);
+      toast.error(error.message || "Failed to create home");
     },
   });
 };

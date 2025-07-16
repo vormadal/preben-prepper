@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useSession, signOut } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { Package, Settings, Home, User, LogOut } from "lucide-react";
+import { HomeSelector } from "@/components/HomeSelector";
 
 export function Header() {
   const pathname = usePathname();
@@ -30,18 +31,20 @@ export function Header() {
 
           <div className="flex items-center space-x-2 md:space-x-4">
             {showNavigation && (
-              <nav className="flex justify-center md:justify-end space-x-1 md:space-x-2">
-                <Button
-                  variant={pathname === "/" ? "default" : "outline"}
-                  size="sm"
-                  asChild
-                  className="px-2 md:px-3"
-                >
-                  <Link href="/">
-                    <Home className="h-4 w-4 md:mr-2" />
-                    <span className="hidden md:inline">Home</span>
-                  </Link>
-                </Button>
+              <>
+                <HomeSelector />
+                <nav className="flex justify-center md:justify-end space-x-1 md:space-x-2">
+                  <Button
+                    variant={pathname === "/" ? "default" : "outline"}
+                    size="sm"
+                    asChild
+                    className="px-2 md:px-3"
+                  >
+                    <Link href="/">
+                      <Home className="h-4 w-4 md:mr-2" />
+                      <span className="hidden md:inline">Home</span>
+                    </Link>
+                  </Button>
                 <Button
                   variant={pathname === "/inventory" ? "default" : "outline"}
                   size="sm"
@@ -65,6 +68,7 @@ export function Header() {
                   </Link>
                 </Button>
               </nav>
+              </>
             )}
             
             {!isAuthPage && (

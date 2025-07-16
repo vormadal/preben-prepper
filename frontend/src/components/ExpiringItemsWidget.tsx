@@ -8,9 +8,12 @@ import { AlertTriangle, Package, RefreshCw, Plus } from "lucide-react";
 import Link from "next/link";
 import { DateOnly } from "@microsoft/kiota-abstractions";
 import { InventoryItem } from "@/generated/models";
+import { useSessionWithHome } from "@/hooks/useSessionWithHome";
 
 export function ExpiringItemsWidget() {
-  const { data: items, isLoading, error, refetch } = useInventoryItems();
+  const { userId, selectedHomeId } = useSessionWithHome();
+  
+  const { data: items, isLoading, error, refetch } = useInventoryItems(userId, selectedHomeId);
 
   const isExpired = (expirationDate: DateOnly | null | undefined) => {
     if (!expirationDate) return false;

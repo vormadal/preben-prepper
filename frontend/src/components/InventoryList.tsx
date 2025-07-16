@@ -25,10 +25,13 @@ import {
 } from '@/lib/inventory-utils';
 import { AlertTriangle, ChevronDown, ChevronRight, Package, Plus, Search, Trash2 } from 'lucide-react';
 import { useState } from 'react';
+import { useSessionWithHome } from '@/hooks/useSessionWithHome';
 import { InventoryForm } from './InventoryForm';
 
 export function InventoryList() {
-  const { data: items, isLoading, error } = useInventoryItems();
+  const { userId, selectedHomeId, isLoading: sessionLoading, isAuthenticated } = useSessionWithHome();
+  
+  const { data: items, isLoading, error } = useInventoryItems(userId, selectedHomeId);
   const deleteItem = useDeleteInventoryItem();
   
   const [editingItem, setEditingItem] = useState<InventoryItem | null>(null);
@@ -90,7 +93,7 @@ export function InventoryList() {
     name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  if (isLoading) {
+  if (isLoading || sessionLoading || !isAuthenticated) {
     return (
       <div className="flex items-center justify-center py-8">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>

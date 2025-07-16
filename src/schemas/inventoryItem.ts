@@ -8,6 +8,7 @@ export const createInventoryItemSchema = z.object({
     const parsedDate = new Date(date);
     return !isNaN(parsedDate.getTime());
   }, 'Invalid date format'),
+  homeId: z.number().int().min(1, 'Home ID is required'),
 });
 
 export const updateInventoryItemSchema = z.object({
@@ -17,6 +18,7 @@ export const updateInventoryItemSchema = z.object({
     const parsedDate = new Date(date);
     return !isNaN(parsedDate.getTime());
   }, 'Invalid date format').optional(),
+  homeId: z.number().int().min(1, 'Home ID is required').optional(),
 });
 
 export const inventoryItemParamsSchema = z.object({

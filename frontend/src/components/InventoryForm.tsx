@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { useCreateInventoryItem, useUpdateInventoryItem } from "@/hooks/useApi";
+import { useCreateInventoryItem, useUpdateInventoryItem, useHomes } from "@/hooks/useApi";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/form";
 import { InventoryItem } from "@/generated/models";
 import { DateOnly } from "@microsoft/kiota-abstractions";
+import { useSessionWithHome } from "@/hooks/useSessionWithHome";
 
 const inventoryItemSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -56,8 +57,11 @@ export function InventoryForm({
   onSuccess,
   onCancel,
 }: InventoryFormProps) {
+  const { userId, selectedHomeId, isAuthenticated } = useSessionWithHome();
+  
   const createItem = useCreateInventoryItem();
   const updateItem = useUpdateInventoryItem();
+  const { data: homes } = useHomes(userId || 0);
 
   const form = useForm<InventoryItemFormData>({
     resolver: zodResolver(inventoryItemSchema),
@@ -81,19 +85,32 @@ export function InventoryForm({
     }
   }, [item, form]);
 
+  // Show loading if session or homes are not loaded
+  if (!isAuthenticated || !userId) {
+    return <div>Loading...</div>;
+  }
+
+  // If we have a selected home, use it; otherwise fall back to the first home
+  const targetHomeId = selectedHomeId || homes?.[0]?.id;
+
   const onSubmit = async (data: InventoryItemFormData) => {
     try {
+      if (!userId || !targetHomeId) {
+        throw new Error("User or home not available");
+      }
+
       // Convert form data to API format
       const apiData = {
         name: data.name,
         quantity: data.quantity,
         expirationDate: convertToDateOnly(data.expirationDate),
+        homeId: targetHomeId,
       };
 
       if (isEditing && item?.id) {
         await updateItem.mutateAsync({ id: item.id, data: apiData });
       } else {
-        await createItem.mutateAsync(apiData);
+        await createItem.mutateAsync({ userId, data: apiData });
       }
       onSuccess();
       form.reset();
@@ -101,6 +118,17 @@ export function InventoryForm({
       // Error is handled by the mutation hooks
     }
   };
+
+  if (!targetHomeId) {
+    return (
+      <div className="text-center py-4">
+        <p className="text-red-600 mb-2">No homes found.</p>
+        <p className="text-sm text-muted-foreground">
+          Please create a home first to add inventory items.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <Form {...form}>

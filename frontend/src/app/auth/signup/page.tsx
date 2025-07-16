@@ -48,7 +48,7 @@ export default function SignUp() {
       })
 
       if (response.ok) {
-        router.push("/auth/signin?message=Account created successfully")
+        router.push("/onboarding?message=Account created successfully")
       } else {
         const data = await response.json()
         setError(data.error?.message || "Failed to create account")

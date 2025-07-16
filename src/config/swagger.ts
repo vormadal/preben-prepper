@@ -44,7 +44,7 @@ const options = {
         },
         InventoryItem: {
           type: 'object',
-          required: ['id', 'name', 'quantity', 'expirationDate'],
+          required: ['id', 'name', 'quantity', 'expirationDate', 'homeId'],
           properties: {
             id: {
               type: 'integer',
@@ -63,6 +63,24 @@ const options = {
               type: 'string',
               format: 'date',
               description: 'Item expiration date',
+            },
+            homeId: {
+              type: 'integer',
+              description: 'ID of the home this item belongs to',
+            },
+            home: {
+              type: 'object',
+              properties: {
+                id: {
+                  type: 'integer',
+                  description: 'Home ID',
+                },
+                name: {
+                  type: 'string',
+                  description: 'Home name',
+                },
+              },
+              description: 'Basic home details',
             },
             createdAt: {
               type: 'string',
@@ -110,6 +128,111 @@ const options = {
               type: 'string',
               format: 'date-time',
               description: 'Item last update timestamp',
+            },
+          },
+        },
+        Home: {
+          type: 'object',
+          required: ['id', 'name', 'numberOfAdults', 'numberOfChildren', 'numberOfPets', 'ownerId'],
+          properties: {
+            id: {
+              type: 'integer',
+              description: 'Home ID',
+            },
+            name: {
+              type: 'string',
+              description: 'Home name',
+            },
+            numberOfAdults: {
+              type: 'integer',
+              minimum: 1,
+              description: 'Number of adults in the home',
+            },
+            numberOfChildren: {
+              type: 'integer',
+              minimum: 0,
+              description: 'Number of children in the home',
+            },
+            numberOfPets: {
+              type: 'integer',
+              minimum: 0,
+              description: 'Number of pets in the home',
+            },
+            ownerId: {
+              type: 'integer',
+              description: 'User ID of the home owner',
+            },
+            owner: {
+              $ref: '#/components/schemas/User',
+              description: 'Home owner details',
+            },
+            homeAccesses: {
+              type: 'array',
+              items: {
+                $ref: '#/components/schemas/HomeAccess',
+              },
+              description: 'List of users with access to this home',
+            },
+            createdAt: {
+              type: 'string',
+              format: 'date-time',
+              description: 'Home creation timestamp',
+            },
+            updatedAt: {
+              type: 'string',
+              format: 'date-time',
+              description: 'Home last update timestamp',
+            },
+          },
+        },
+        HomeAccess: {
+          type: 'object',
+          required: ['id', 'userId', 'homeId', 'role'],
+          properties: {
+            id: {
+              type: 'integer',
+              description: 'Home access ID',
+            },
+            userId: {
+              type: 'integer',
+              description: 'User ID with access',
+            },
+            homeId: {
+              type: 'integer',
+              description: 'Home ID',
+            },
+            role: {
+              type: 'string',
+              enum: ['ADMIN', 'MEMBER'],
+              description: 'User role for this home',
+            },
+            user: {
+              $ref: '#/components/schemas/User',
+              description: 'User details',
+            },
+            home: {
+              type: 'object',
+              properties: {
+                id: {
+                  type: 'integer',
+                  description: 'Home ID',
+                },
+                name: {
+                  type: 'string',
+                  description: 'Home name',
+                },
+              },
+              description: 'Basic home details',
+            },
+            createdAt: {
+              type: 'string',
+              format: 'date-time',
+              description: 'Access grant timestamp',
+            },
+            updatedAt: {
+              type: 'string',
+              format: 'date-time',
+              description: 'Access last update timestamp',
             },
           },
         },

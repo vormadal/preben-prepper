@@ -29,9 +29,12 @@ import {
     XCircle
 } from "lucide-react";
 import { useState } from "react";
+import { useSessionWithHome } from "@/hooks/useSessionWithHome";
 
 export default function RecommendationsPage() {
-  const { data: inventoryItems } = useInventoryItems();
+  const { userId, selectedHomeId } = useSessionWithHome();
+  
+  const { data: inventoryItems } = useInventoryItems(userId, selectedHomeId);
   const { data: recommendedItems, isLoading } = useRecommendedInventoryItems();
   const createFromRecommendation = useCreateInventoryFromRecommendation();
   const [activeTab, setActiveTab] = useState("unfollowed");

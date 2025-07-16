@@ -2,14 +2,16 @@
 - Do not try to start or restart the application after making changes
 
 ## Frontend Project
+- Is located in the `./frontend` folder.
 - NextJS application using TypeScript
 - ShadCN for default components and Tailwind CSS for styling
 - Tanstack Query for data fetching
 - Components should be optimized for mobile over desktop
 - Jest and React Testing Library for testing
-- Kiota to generate the API client from http://localhost:3000/api-docs/
+- Kiota to generate the API client from http://localhost:3000/api-docs.json
 
 ## Backend Project
+- Is located in the `./` folder.
 - Node.js application using TypeScript
 - Express.js for the server framework
 - swagger-jsdoc for API documentation
@@ -18,6 +20,7 @@
 - PostgreSQL as the database
 - Zod for request validation
 - Jest for testing
+- when making changes to the backend, ensure that the OpenAPI spec is updated as well
 
 ## Coding Standards
 - Use TypeScript strict mode

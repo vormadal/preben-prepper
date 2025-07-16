@@ -5,9 +5,12 @@ import { Button } from '@/components/ui/button';
 import { AlertCircle, ChevronRight } from 'lucide-react';
 import Link from 'next/link';
 import { useInventoryItems, useRecommendedInventoryItems } from '@/hooks/useApi';
+import { useSessionWithHome } from '@/hooks/useSessionWithHome';
 
 export function UnfollowedRecommendationsWidget() {
-  const { data: inventoryItems } = useInventoryItems();
+  const { userId, selectedHomeId } = useSessionWithHome();
+  
+  const { data: inventoryItems } = useInventoryItems(userId, selectedHomeId);
   const { data: recommendedItems, isLoading } = useRecommendedInventoryItems();
 
   const getUnfollowedRecommendations = () => {

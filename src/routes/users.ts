@@ -231,7 +231,7 @@ router.put(
   async (req: Request, res: Response): Promise<void> => {
     try {
       const { id } = req.params;
-      const { name, email, password } = req.body;
+      const { name, email, password, defaultHomeId } = req.body;
       
       // Check if user exists
       const existingUser = await prisma.user.findUnique({
@@ -246,6 +246,33 @@ router.put(
           },
         });
         return;
+      }
+      
+      // If defaultHomeId is provided, verify the user has access to this home
+      if (defaultHomeId !== undefined) {
+        const hasAccess = await prisma.home.findFirst({
+          where: {
+            id: defaultHomeId,
+            OR: [
+              { ownerId: Number(id) },
+              {
+                homeAccesses: {
+                  some: { userId: Number(id) }
+                }
+              }
+            ]
+          }
+        });
+        
+        if (!hasAccess) {
+          res.status(403).json({
+            error: {
+              message: 'Access denied to this home',
+              status: 403,
+            },
+          });
+          return;
+        }
       }
       
       // Check if email already exists (excluding current user)
@@ -275,12 +302,15 @@ router.put(
       if (password) {
         updateData.password = await bcrypt.hash(password, 10);
       }
+      if (defaultHomeId !== undefined) {
+        updateData.defaultHomeId = defaultHomeId;
+      }
       
       // Update user
       const updatedUser = await prisma.user.update({
         where: { id: Number(id) },
         data: updateData,
-        select: { id: true, name: true, email: true, createdAt: true, updatedAt: true }
+        select: { id: true, name: true, email: true, defaultHomeId: true, createdAt: true, updatedAt: true }
       });
       
       res.json(updatedUser);

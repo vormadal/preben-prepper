@@ -1,14 +1,20 @@
 import { PrismaClient } from '@prisma/client';
+import bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
 
 async function main() {
   console.log('🌱 Seeding database...');
 
-  // Clear existing data
+  // Clear existing data in proper order to handle foreign key constraints
   await prisma.inventoryItem.deleteMany();
+  await prisma.homeAccess.deleteMany();
+  await prisma.home.deleteMany();
   await prisma.recommendedInventoryItem.deleteMany();
   await prisma.user.deleteMany();
+
+  // Hash password for all users
+  const hashedPassword = await bcrypt.hash('password123', 10);
 
   // Seed users
   const users = await Promise.all([
@@ -16,37 +22,103 @@ async function main() {
       data: {
         name: 'John Doe',
         email: 'john.doe@example.com',
+        password: hashedPassword,
       },
     }),
     prisma.user.create({
       data: {
         name: 'Jane Smith',
         email: 'jane.smith@example.com',
+        password: hashedPassword,
       },
     }),
     prisma.user.create({
       data: {
         name: 'Bob Johnson',
         email: 'bob.johnson@example.com',
+        password: hashedPassword,
       },
     }),
     prisma.user.create({
       data: {
         name: 'Alice Brown',
         email: 'alice.brown@example.com',
+        password: hashedPassword,
       },
     }),
   ]);
 
   console.log(`✅ Created ${users.length} users`);
 
-  // Seed inventory items (with some duplicate names to show the system supports it)
+  // Seed homes
+  const homes = await Promise.all([
+    prisma.home.create({
+      data: {
+        name: 'The Doe Family Home',
+        numberOfAdults: 2,
+        numberOfChildren: 2,
+        numberOfPets: 1,
+        ownerId: users[0].id, // John Doe
+      },
+    }),
+    prisma.home.create({
+      data: {
+        name: 'Jane\'s Apartment',
+        numberOfAdults: 1,
+        numberOfChildren: 0,
+        numberOfPets: 0,
+        ownerId: users[1].id, // Jane Smith
+      },
+    }),
+    prisma.home.create({
+      data: {
+        name: 'The Johnson Household',
+        numberOfAdults: 2,
+        numberOfChildren: 3,
+        numberOfPets: 2,
+        ownerId: users[2].id, // Bob Johnson
+      },
+    }),
+  ]);
+
+  console.log(`✅ Created ${homes.length} homes`);
+
+  // Seed home access (give Jane access to John's home as ADMIN, Alice as MEMBER)
+  const homeAccesses = await Promise.all([
+    prisma.homeAccess.create({
+      data: {
+        userId: users[1].id, // Jane Smith
+        homeId: homes[0].id, // John's home
+        role: 'ADMIN',
+      },
+    }),
+    prisma.homeAccess.create({
+      data: {
+        userId: users[3].id, // Alice Brown
+        homeId: homes[0].id, // John's home
+        role: 'MEMBER',
+      },
+    }),
+    prisma.homeAccess.create({
+      data: {
+        userId: users[0].id, // John Doe
+        homeId: homes[1].id, // Jane's apartment
+        role: 'MEMBER',
+      },
+    }),
+  ]);
+
+  console.log(`✅ Created ${homeAccesses.length} home access records`);
+
+  // Seed inventory items (distributed across different homes)
   const inventoryItems = await Promise.all([
+    // Items for John's home
     prisma.inventoryItem.create({
       data: {
         name: 'Canned Beans',
         quantity: 12,
         expirationDate: new Date('2025-12-31'),
+        homeId: homes[0].id, // John's home
       },
     }),
     prisma.inventoryItem.create({
@@ -54,20 +126,7 @@ async function main() {
         name: 'Rice',
         quantity: 5,
         expirationDate: new Date('2026-06-15'),
-      },
-    }),
-    prisma.inventoryItem.create({
-      data: {
-        name: 'Canned Beans',
-        quantity: 8,
-        expirationDate: new Date('2025-08-20'),
-      },
-    }),
-    prisma.inventoryItem.create({
-      data: {
-        name: 'Rice',
-        quantity: 3,
-        expirationDate: new Date('2025-12-01'),
+        homeId: homes[0].id, // John's home
       },
     }),
     prisma.inventoryItem.create({
@@ -75,6 +134,7 @@ async function main() {
         name: 'Pasta',
         quantity: 15,
         expirationDate: new Date('2026-03-10'),
+        homeId: homes[0].id, // John's home
       },
     }),
     prisma.inventoryItem.create({
@@ -82,20 +142,43 @@ async function main() {
         name: 'Canned Corn',
         quantity: 6,
         expirationDate: new Date('2025-11-15'),
+        homeId: homes[0].id, // John's home
+      },
+    }),
+    
+    // Items for Jane's apartment
+    prisma.inventoryItem.create({
+      data: {
+        name: 'Canned Beans',
+        quantity: 4,
+        expirationDate: new Date('2025-08-20'),
+        homeId: homes[1].id, // Jane's apartment
+      },
+    }),
+    prisma.inventoryItem.create({
+      data: {
+        name: 'Rice',
+        quantity: 2,
+        expirationDate: new Date('2025-12-01'),
+        homeId: homes[1].id, // Jane's apartment
       },
     }),
     prisma.inventoryItem.create({
       data: {
         name: 'Flour',
-        quantity: 2,
+        quantity: 1,
         expirationDate: new Date('2025-09-30'),
+        homeId: homes[1].id, // Jane's apartment
       },
     }),
+    
+    // Items for Bob's household
     prisma.inventoryItem.create({
       data: {
         name: 'Canned Tomatoes',
         quantity: 10,
         expirationDate: new Date('2026-01-20'),
+        homeId: homes[2].id, // Bob's household
       },
     }),
     prisma.inventoryItem.create({
@@ -103,6 +186,7 @@ async function main() {
         name: 'Oats',
         quantity: 4,
         expirationDate: new Date('2025-10-05'),
+        homeId: homes[2].id, // Bob's household
       },
     }),
     prisma.inventoryItem.create({
@@ -110,6 +194,7 @@ async function main() {
         name: 'Pasta',
         quantity: 7,
         expirationDate: new Date('2025-07-12'),
+        homeId: homes[2].id, // Bob's household
       },
     }),
     prisma.inventoryItem.create({
@@ -117,6 +202,7 @@ async function main() {
         name: 'Canned Soup',
         quantity: 9,
         expirationDate: new Date('2026-02-28'),
+        homeId: homes[2].id, // Bob's household
       },
     }),
     prisma.inventoryItem.create({
@@ -124,6 +210,7 @@ async function main() {
         name: 'Quinoa',
         quantity: 3,
         expirationDate: new Date('2026-04-18'),
+        homeId: homes[2].id, // Bob's household
       },
     }),
   ]);
