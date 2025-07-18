@@ -19,8 +19,8 @@ export const queryKeys = {
   user: (id: number) => ["users", id] as const,
   homes: (userId: number) => ["homes", userId] as const,
   home: (id: number, userId: number) => ["homes", id, userId] as const,
-  inventory: ["inventory"] as const,
-  inventoryItem: (id: number) => ["inventory", id] as const,
+  inventory: (homeId: number) => ["inventory", homeId] as const,
+  inventoryItem: (homeId: number, id: number) => ["inventory", homeId, id] as const,
   health: ["health"] as const,
 };
 
@@ -104,24 +104,29 @@ export const useHealthCheck = () => {
 };
 
 // Inventory queries
-export const useInventoryItems = (userId?: number, homeId?: number) => {
+export const useInventoryItems = (homeId: number, userId?: number) => {
   return useQuery({
-    queryKey: [...queryKeys.inventory, userId, homeId],
+    queryKey: [...queryKeys.inventory(homeId), userId],
     queryFn: () => {
       if (!userId) {
         throw new Error('User ID is required');
       }
-      return apiClient.getInventoryItems(userId, homeId);
+      return apiClient.getInventoryItems(homeId, userId);
     },
-    enabled: !!userId,
+    enabled: !!userId && !!homeId,
   });
 };
 
-export const useInventoryItem = (id: number) => {
+export const useInventoryItem = (homeId: number, id: number, userId?: number) => {
   return useQuery({
-    queryKey: queryKeys.inventoryItem(id),
-    queryFn: () => apiClient.getInventoryItem(id),
-    enabled: !!id,
+    queryKey: queryKeys.inventoryItem(homeId, id),
+    queryFn: () => {
+      if (!userId) {
+        throw new Error('User ID is required');
+      }
+      return apiClient.getInventoryItem(homeId, id, userId);
+    },
+    enabled: !!id && !!homeId && !!userId,
   });
 };
 
@@ -130,10 +135,10 @@ export const useCreateInventoryItem = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ userId, data }: { userId: number; data: InventoryPostRequestBody & { homeId: number } }) =>
-      apiClient.createInventoryItem(userId, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.inventory });
+    mutationFn: ({ homeId, data }: { homeId: number; data: InventoryPostRequestBody & { userId: number } }) =>
+      apiClient.createInventoryItem(homeId, data),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.inventory(variables.homeId) });
       toast.success("Inventory item created successfully!");
     },
     onError: (error: Error) => {
@@ -147,12 +152,12 @@ export const useUpdateInventoryItem = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, data }: { id: number; data: InventoryPutRequestBody }) =>
-      apiClient.updateInventoryItem(id, data),
-    onSuccess: (updatedItem: InventoryItem) => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.inventory });
+    mutationFn: ({ homeId, id, userId, data }: { homeId: number; id: number; userId: number; data: InventoryPutRequestBody }) =>
+      apiClient.updateInventoryItem(homeId, id, userId, data),
+    onSuccess: (updatedItem: InventoryItem, variables) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.inventory(variables.homeId) });
       queryClient.setQueryData(
-        queryKeys.inventoryItem(updatedItem.id ?? -1),
+        queryKeys.inventoryItem(variables.homeId, updatedItem.id ?? -1),
         updatedItem
       );
       toast.success("Inventory item updated successfully!");
@@ -168,9 +173,10 @@ export const useDeleteInventoryItem = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (id: number) => apiClient.deleteInventoryItem(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.inventory });
+    mutationFn: ({ homeId, id, userId }: { homeId: number; id: number; userId: number }) => 
+      apiClient.deleteInventoryItem(homeId, id, userId),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.inventory(variables.homeId) });
       toast.success("Inventory item deleted successfully!");
     },
     onError: (error: Error) => {
@@ -202,8 +208,9 @@ export const useCreateInventoryFromRecommendation = () => {
   return useMutation({
     mutationFn: ({ id, data }: { id: number; data?: { quantity?: number; customExpirationDate?: string } }) =>
       apiClient.createInventoryFromRecommendation(id, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.inventory });
+    onSuccess: (_, variables) => {
+      // Since we don't know which home this was created for, invalidate all inventory queries
+      queryClient.invalidateQueries({ queryKey: ["inventory"] });
       toast.success("Inventory item created from recommendation!");
     },
     onError: (error: Error) => {

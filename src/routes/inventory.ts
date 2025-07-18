@@ -1,9 +1,9 @@
 import { Router, Request, Response } from 'express';
 import { validateRequest } from '../middleware/validation';
-import { createInventoryItemSchema, updateInventoryItemSchema, inventoryItemParamsSchema } from '../schemas/inventoryItem';
+import { createInventoryItemSchema, updateInventoryItemSchema, homeInventoryParamsSchema } from '../schemas/inventoryItem';
 import { prisma } from '../lib/prisma';
 
-const router: Router = Router();
+const router: Router = Router({ mergeParams: true });
 
 // Helper function to check if user has access to a home
 async function checkHomeAccess(userId: number, homeId: number): Promise<boolean> {
@@ -26,23 +26,23 @@ async function checkHomeAccess(userId: number, homeId: number): Promise<boolean>
 
 /**
  * @swagger
- * /api/inventory:
+ * /api/home/{homeId}/inventory:
  *   get:
- *     summary: Get inventory items for homes the user has access to
+ *     summary: Get inventory items for a specific home
  *     tags: [Inventory]
  *     parameters:
+ *       - in: path
+ *         name: homeId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: Home ID to get inventory for
  *       - in: query
  *         name: userId
  *         required: true
  *         schema:
  *           type: integer
- *         description: User ID to get inventory for
- *       - in: query
- *         name: homeId
- *         required: false
- *         schema:
- *           type: integer
- *         description: Optional home ID to filter by specific home
+ *         description: User ID to verify access
  *     responses:
  *       200:
  *         description: List of inventory items
@@ -52,11 +52,17 @@ async function checkHomeAccess(userId: number, homeId: number): Promise<boolean>
  *               type: array
  *               items:
  *                 $ref: '#/components/schemas/InventoryItem'
+ *       403:
+ *         description: Access denied
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
  */
 router.get('/', async (req: Request, res: Response): Promise<void> => {
   try {
     const userId = Number(req.query.userId);
-    const homeId = req.query.homeId ? Number(req.query.homeId) : undefined;
+    const homeId = Number(req.params.homeId);
     
     if (!userId || isNaN(userId)) {
       res.status(400).json({
@@ -68,39 +74,32 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-    // Build where clause based on user's accessible homes
-    const whereClause: any = {
-      home: {
-        OR: [
-          { ownerId: userId },
-          {
-            homeAccesses: {
-              some: { userId }
-            }
-          }
-        ]
-      }
-    };
+    if (!homeId || isNaN(homeId)) {
+      res.status(400).json({
+        error: {
+          message: 'Valid home ID is required',
+          status: 400,
+        },
+      });
+      return;
+    }
 
-    // If specific home is requested, add that filter
-    if (homeId) {
-      whereClause.homeId = homeId;
-      
-      // Verify user has access to this specific home
-      const hasAccess = await checkHomeAccess(userId, homeId);
-      if (!hasAccess) {
-        res.status(403).json({
-          error: {
-            message: 'Access denied to this home',
-            status: 403,
-          },
-        });
-        return;
-      }
+    // Verify user has access to this home
+    const hasAccess = await checkHomeAccess(userId, homeId);
+    if (!hasAccess) {
+      res.status(403).json({
+        error: {
+          message: 'Access denied to this home',
+          status: 403,
+        },
+      });
+      return;
     }
 
     const items = await prisma.inventoryItem.findMany({
-      where: whereClause,
+      where: {
+        homeId: homeId
+      },
       include: {
         home: {
           select: { id: true, name: true }
@@ -122,11 +121,17 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
 
 /**
  * @swagger
- * /api/inventory/{id}:
+ * /api/home/{homeId}/inventory/{id}:
  *   get:
  *     summary: Get inventory item by ID
  *     tags: [Inventory]
  *     parameters:
+ *       - in: path
+ *         name: homeId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: Home ID
  *       - in: path
  *         name: id
  *         required: true
@@ -161,10 +166,11 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
  */
 router.get(
   '/:id',
-  validateRequest({ params: inventoryItemParamsSchema }),
+  validateRequest({ params: homeInventoryParamsSchema }),
   async (req: Request, res: Response): Promise<void> => {
     try {
       const { id } = req.params;
+      const homeId = Number(req.params.homeId);
       const userId = Number(req.query.userId);
       
       if (!userId || isNaN(userId)) {
@@ -177,19 +183,32 @@ router.get(
         return;
       }
 
+      if (!homeId || isNaN(homeId)) {
+        res.status(400).json({
+          error: {
+            message: 'Valid home ID is required',
+            status: 400,
+          },
+        });
+        return;
+      }
+
+      // Verify user has access to this home
+      const hasAccess = await checkHomeAccess(userId, homeId);
+      if (!hasAccess) {
+        res.status(403).json({
+          error: {
+            message: 'Access denied to this home',
+            status: 403,
+          },
+        });
+        return;
+      }
+
       const item = await prisma.inventoryItem.findFirst({
         where: {
           id: Number(id),
-          home: {
-            OR: [
-              { ownerId: userId },
-              {
-                homeAccesses: {
-                  some: { userId }
-                }
-              }
-            ]
-          }
+          homeId: homeId
         },
         include: {
           home: {
@@ -201,7 +220,7 @@ router.get(
       if (!item) {
         res.status(404).json({
           error: {
-            message: 'Inventory item not found or access denied',
+            message: 'Inventory item not found',
             status: 404,
           },
         });
@@ -222,10 +241,17 @@ router.get(
 
 /**
  * @swagger
- * /api/inventory:
+ * /api/home/{homeId}/inventory:
  *   post:
  *     summary: Create a new inventory item
  *     tags: [Inventory]
+ *     parameters:
+ *       - in: path
+ *         name: homeId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: Home ID where the item will be created
  *     requestBody:
  *       required: true
  *       content:
@@ -236,7 +262,7 @@ router.get(
  *               - name
  *               - quantity
  *               - expirationDate
- *               - homeId
+ *               - userId
  *             properties:
  *               name:
  *                 type: string
@@ -249,9 +275,10 @@ router.get(
  *                 type: string
  *                 format: date
  *                 description: Item expiration date
- *               homeId:
- *                type: integer
- *                minimum: 1
+ *               userId:
+ *                 type: integer
+ *                 minimum: 1
+ *                 description: User ID creating the item
  *     responses:
  *       201:
  *         description: Inventory item created successfully
@@ -265,19 +292,35 @@ router.get(
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/Error'
+ *       403:
+ *         description: Access denied
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
  */
 router.post(
   '/',
   validateRequest({ body: createInventoryItemSchema }),
   async (req: Request, res: Response): Promise<void> => {
     try {
-      const { name, quantity, expirationDate, homeId } = req.body;
-      const userId = Number(req.query.userId);
+      const { name, quantity, expirationDate, userId } = req.body;
+      const homeId = Number(req.params.homeId);
       
       if (!userId || isNaN(userId)) {
         res.status(400).json({
           error: {
             message: 'Valid user ID is required',
+            status: 400,
+          },
+        });
+        return;
+      }
+
+      if (!homeId || isNaN(homeId)) {
+        res.status(400).json({
+          error: {
+            message: 'Valid home ID is required',
             status: 400,
           },
         });
@@ -324,17 +367,29 @@ router.post(
 
 /**
  * @swagger
- * /api/inventory/{id}:
+ * /api/home/{homeId}/inventory/{id}:
  *   put:
  *     summary: Update inventory item by ID
  *     tags: [Inventory]
  *     parameters:
+ *       - in: path
+ *         name: homeId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: Home ID
  *       - in: path
  *         name: id
  *         required: true
  *         schema:
  *           type: integer
  *         description: Inventory item ID
+ *       - in: query
+ *         name: userId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: User ID requesting the update
  *     requestBody:
  *       required: true
  *       content:
@@ -366,6 +421,12 @@ router.post(
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/Error'
+ *       403:
+ *         description: Access denied
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
  *       400:
  *         description: Validation error
  *         content:
@@ -375,15 +436,52 @@ router.post(
  */
 router.put(
   '/:id',
-  validateRequest({ params: inventoryItemParamsSchema, body: updateInventoryItemSchema }),
+  validateRequest({ params: homeInventoryParamsSchema, body: updateInventoryItemSchema }),
   async (req: Request, res: Response): Promise<void> => {
     try {
       const { id } = req.params;
+      const homeId = Number(req.params.homeId);
+      const userId = Number(req.query.userId);
       const { name, quantity, expirationDate } = req.body;
       
-      // Check if item exists
-      const existingItem = await prisma.inventoryItem.findUnique({
-        where: { id: Number(id) },
+      if (!userId || isNaN(userId)) {
+        res.status(400).json({
+          error: {
+            message: 'Valid user ID is required',
+            status: 400,
+          },
+        });
+        return;
+      }
+
+      if (!homeId || isNaN(homeId)) {
+        res.status(400).json({
+          error: {
+            message: 'Valid home ID is required',
+            status: 400,
+          },
+        });
+        return;
+      }
+
+      // Verify user has access to this home
+      const hasAccess = await checkHomeAccess(userId, homeId);
+      if (!hasAccess) {
+        res.status(403).json({
+          error: {
+            message: 'Access denied to this home',
+            status: 403,
+          },
+        });
+        return;
+      }
+      
+      // Check if item exists and belongs to the specified home
+      const existingItem = await prisma.inventoryItem.findFirst({
+        where: { 
+          id: Number(id),
+          homeId: homeId
+        },
       });
       
       if (!existingItem) {
@@ -404,6 +502,11 @@ router.put(
           ...(quantity !== undefined && { quantity }),
           ...(expirationDate && { expirationDate: new Date(expirationDate) }),
         },
+        include: {
+          home: {
+            select: { id: true, name: true }
+          }
+        }
       });
       
       res.json(updatedItem);
@@ -420,17 +523,29 @@ router.put(
 
 /**
  * @swagger
- * /api/inventory/{id}:
+ * /api/home/{homeId}/inventory/{id}:
  *   delete:
  *     summary: Delete inventory item by ID
  *     tags: [Inventory]
  *     parameters:
+ *       - in: path
+ *         name: homeId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: Home ID
  *       - in: path
  *         name: id
  *         required: true
  *         schema:
  *           type: integer
  *         description: Inventory item ID
+ *       - in: query
+ *         name: userId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: User ID requesting the deletion
  *     responses:
  *       204:
  *         description: Inventory item deleted successfully
@@ -440,17 +555,60 @@ router.put(
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/Error'
+ *       403:
+ *         description: Access denied
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
  */
 router.delete(
   '/:id',
-  validateRequest({ params: inventoryItemParamsSchema }),
+  validateRequest({ params: homeInventoryParamsSchema }),
   async (req: Request, res: Response): Promise<void> => {
     try {
       const { id } = req.params;
+      const homeId = Number(req.params.homeId);
+      const userId = Number(req.query.userId);
       
-      // Check if item exists
-      const existingItem = await prisma.inventoryItem.findUnique({
-        where: { id: Number(id) },
+      if (!userId || isNaN(userId)) {
+        res.status(400).json({
+          error: {
+            message: 'Valid user ID is required',
+            status: 400,
+          },
+        });
+        return;
+      }
+
+      if (!homeId || isNaN(homeId)) {
+        res.status(400).json({
+          error: {
+            message: 'Valid home ID is required',
+            status: 400,
+          },
+        });
+        return;
+      }
+
+      // Verify user has access to this home
+      const hasAccess = await checkHomeAccess(userId, homeId);
+      if (!hasAccess) {
+        res.status(403).json({
+          error: {
+            message: 'Access denied to this home',
+            status: 403,
+          },
+        });
+        return;
+      }
+      
+      // Check if item exists and belongs to the specified home
+      const existingItem = await prisma.inventoryItem.findFirst({
+        where: { 
+          id: Number(id),
+          homeId: homeId
+        },
       });
       
       if (!existingItem) {

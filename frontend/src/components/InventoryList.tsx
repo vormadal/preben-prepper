@@ -31,7 +31,7 @@ import { InventoryForm } from './InventoryForm';
 export function InventoryList() {
   const { userId, selectedHomeId, isLoading: sessionLoading, isAuthenticated } = useSessionWithHome();
   
-  const { data: items, isLoading, error } = useInventoryItems(userId, selectedHomeId);
+  const { data: items, isLoading, error } = useInventoryItems(selectedHomeId!, userId);
   const deleteItem = useDeleteInventoryItem();
   
   const [editingItem, setEditingItem] = useState<InventoryItem | null>(null);
@@ -41,7 +41,8 @@ export function InventoryList() {
   const [expandedSummaryItems, setExpandedSummaryItems] = useState<Set<string>>(new Set());
 
   const handleDelete = async (id: number) => {
-    await deleteItem.mutateAsync(id);
+    if (!selectedHomeId || !userId) return;
+    await deleteItem.mutateAsync({ homeId: selectedHomeId, id, userId });
     setDeletingItemId(null);
   };
 

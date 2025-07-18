@@ -104,13 +104,21 @@ export function InventoryForm({
         name: data.name,
         quantity: data.quantity,
         expirationDate: convertToDateOnly(data.expirationDate),
-        homeId: targetHomeId,
+        userId,
       };
 
       if (isEditing && item?.id) {
-        await updateItem.mutateAsync({ id: item.id, data: apiData });
+        await updateItem.mutateAsync({ 
+          homeId: targetHomeId, 
+          id: item.id, 
+          userId, 
+          data: apiData 
+        });
       } else {
-        await createItem.mutateAsync({ userId, data: apiData });
+        await createItem.mutateAsync({ 
+          homeId: targetHomeId, 
+          data: apiData 
+        });
       }
       onSuccess();
       form.reset();

@@ -34,7 +34,7 @@ import { useSessionWithHome } from "@/hooks/useSessionWithHome";
 export default function RecommendationsPage() {
   const { userId, selectedHomeId } = useSessionWithHome();
   
-  const { data: inventoryItems } = useInventoryItems(userId, selectedHomeId);
+  const { data: inventoryItems } = useInventoryItems(selectedHomeId!, userId);
   const { data: recommendedItems, isLoading } = useRecommendedInventoryItems();
   const createFromRecommendation = useCreateInventoryFromRecommendation();
   const [activeTab, setActiveTab] = useState("unfollowed");

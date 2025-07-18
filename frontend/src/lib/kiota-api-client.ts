@@ -124,52 +124,87 @@ class ApiClientWrapper {
   }
 
   // Inventory API
-  async getInventoryItems(userId: number, homeId?: number): Promise<GeneratedInventoryItem[]> {
-    const params: any = { userId };
-    if (homeId) {
-      params.homeId = homeId;
+  async getInventoryItems(homeId: number, userId: number): Promise<GeneratedInventoryItem[]> {
+    const response = await fetch(`${API_BASE_URL}/api/home/${homeId}/inventory?userId=${userId}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Failed to fetch inventory items: ${response.statusText}`);
     }
     
-    const response = await this.client.api.inventory.get({
-      queryParameters: params
-    });
-    return response || [];
+    return await response.json();
   }
 
-  async getInventoryItem(id: number): Promise<GeneratedInventoryItem> {
-    const response = await this.client.api.inventory.byId(id).get();
-    if (!response) {
-      throw new Error("Inventory item not found");
+  async getInventoryItem(homeId: number, id: number, userId: number): Promise<GeneratedInventoryItem> {
+    const response = await fetch(`${API_BASE_URL}/api/home/${homeId}/inventory/${id}?userId=${userId}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Failed to fetch inventory item: ${response.statusText}`);
     }
-    return response;
+    
+    return await response.json();
   }
 
   async createInventoryItem(
-    userId: number,
-    data: Partial<GeneratedInventoryItem> & { homeId: number }
+    homeId: number,
+    data: Partial<GeneratedInventoryItem> & { userId: number }
   ): Promise<GeneratedInventoryItem> {
-    const response = await this.client.api.inventory.post(data, {
-      queryParameters: { userId }
+    const response = await fetch(`${API_BASE_URL}/api/home/${homeId}/inventory`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
     });
-    if (!response) {
-      throw new Error("Failed to create inventory item");
+    
+    if (!response.ok) {
+      throw new Error(`Failed to create inventory item: ${response.statusText}`);
     }
-    return response;
+    
+    return await response.json();
   }
 
   async updateInventoryItem(
+    homeId: number,
     id: number,
+    userId: number,
     data: Partial<GeneratedInventoryItem>
   ): Promise<GeneratedInventoryItem> {
-    const response = await this.client.api.inventory.byId(id).put(data);
-    if (!response) {
-      throw new Error("Failed to update inventory item");
+    const response = await fetch(`${API_BASE_URL}/api/home/${homeId}/inventory/${id}?userId=${userId}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Failed to update inventory item: ${response.statusText}`);
     }
-    return response;
+    
+    return await response.json();
   }
 
-  async deleteInventoryItem(id: number): Promise<void> {
-    await this.client.api.inventory.byId(id).delete();
+  async deleteInventoryItem(homeId: number, id: number, userId: number): Promise<void> {
+    const response = await fetch(`${API_BASE_URL}/api/home/${homeId}/inventory/${id}?userId=${userId}`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Failed to delete inventory item: ${response.statusText}`);
+    }
   }
 
   // Recommended Inventory API (User-facing)
@@ -187,7 +222,12 @@ class ApiClientWrapper {
   }
 
   async createInventoryFromRecommendation(id: number, data?: { quantity?: number; customExpirationDate?: string }): Promise<GeneratedInventoryItem> {
-    const response = await this.client.api.recommendedInventory.byId(id).createInventory.post(data);
+    const requestData: any = data ? {
+      quantity: data.quantity,
+      customExpirationDate: data.customExpirationDate ? new Date(data.customExpirationDate) : undefined
+    } : {};
+    
+    const response = await this.client.api.recommendedInventory.byId(id).createInventory.post(requestData);
     if (!response) {
       throw new Error("Failed to create inventory item from recommendation");
     }

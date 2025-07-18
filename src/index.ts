@@ -1,4 +1,4 @@
-import express from 'express';
+import express, { Express } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
@@ -13,7 +13,7 @@ import homeRoutes from './routes/homes';
 import adminRecommendedInventoryRoutes from './routes/admin/recommended-inventory';
 import recommendedInventoryRoutes from './routes/recommended-inventory';
 
-const app = express();
+const app: Express = express();
 const PORT = process.env.PORT || 3000;
 
 // Security middleware
@@ -35,7 +35,7 @@ app.use('/api/health', healthRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/homes', homeRoutes);
-app.use('/api/inventory', inventoryRoutes);
+app.use('/api/home/:homeId/inventory', inventoryRoutes);
 app.use('/api/recommended-inventory', recommendedInventoryRoutes);
 app.use('/api/admin/recommended-inventory', adminRecommendedInventoryRoutes);
 

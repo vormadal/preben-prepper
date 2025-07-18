@@ -10,7 +10,7 @@ import { useSessionWithHome } from '@/hooks/useSessionWithHome';
 export function UnfollowedRecommendationsWidget() {
   const { userId, selectedHomeId } = useSessionWithHome();
   
-  const { data: inventoryItems } = useInventoryItems(userId, selectedHomeId);
+  const { data: inventoryItems } = useInventoryItems(selectedHomeId!, userId);
   const { data: recommendedItems, isLoading } = useRecommendedInventoryItems();
 
   const getUnfollowedRecommendations = () => {

@@ -13,7 +13,7 @@ import { useSessionWithHome } from "@/hooks/useSessionWithHome";
 export default function Home() {
   const { userId, selectedHomeId } = useSessionWithHome();
   
-  const { data: items } = useInventoryItems(userId, selectedHomeId);
+  const { data: items } = useInventoryItems(selectedHomeId!, userId);
 
   const isExpired = (expirationDate: DateOnly | null | undefined) => {
     if (!expirationDate) return false;

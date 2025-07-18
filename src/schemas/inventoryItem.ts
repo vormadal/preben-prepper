@@ -8,7 +8,7 @@ export const createInventoryItemSchema = z.object({
     const parsedDate = new Date(date);
     return !isNaN(parsedDate.getTime());
   }, 'Invalid date format'),
-  homeId: z.number().int().min(1, 'Home ID is required'),
+  userId: z.number().int().min(1, 'User ID is required'),
 });
 
 export const updateInventoryItemSchema = z.object({
@@ -18,13 +18,18 @@ export const updateInventoryItemSchema = z.object({
     const parsedDate = new Date(date);
     return !isNaN(parsedDate.getTime());
   }, 'Invalid date format').optional(),
-  homeId: z.number().int().min(1, 'Home ID is required').optional(),
 });
 
 export const inventoryItemParamsSchema = z.object({
   id: z.string().regex(/^\d+$/, 'ID must be a number').transform(Number),
 });
 
+export const homeInventoryParamsSchema = z.object({
+  homeId: z.string().regex(/^\d+$/, 'Home ID must be a number').transform(Number),
+  id: z.string().regex(/^\d+$/, 'ID must be a number').transform(Number).optional(),
+});
+
 export type CreateInventoryItemRequest = z.infer<typeof createInventoryItemSchema>;
 export type UpdateInventoryItemRequest = z.infer<typeof updateInventoryItemSchema>;
 export type InventoryItemParams = z.infer<typeof inventoryItemParamsSchema>;
+export type HomeInventoryParams = z.infer<typeof homeInventoryParamsSchema>;

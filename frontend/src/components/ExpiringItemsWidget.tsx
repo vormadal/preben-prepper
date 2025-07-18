@@ -13,7 +13,7 @@ import { useSessionWithHome } from "@/hooks/useSessionWithHome";
 export function ExpiringItemsWidget() {
   const { userId, selectedHomeId } = useSessionWithHome();
   
-  const { data: items, isLoading, error, refetch } = useInventoryItems(userId, selectedHomeId);
+  const { data: items, isLoading, error, refetch } = useInventoryItems(selectedHomeId!, userId);
 
   const isExpired = (expirationDate: DateOnly | null | undefined) => {
     if (!expirationDate) return false;
