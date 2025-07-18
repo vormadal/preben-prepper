@@ -1,5 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { validateRequest } from '../middleware/validation';
+import { authenticateToken } from '../middleware/auth';
 import { createUserSchema, updateUserSchema, userParamsSchema } from '../schemas/user';
 import { prisma } from '../lib/prisma';
 import bcrypt from 'bcryptjs';
@@ -12,6 +13,8 @@ const router: Router = Router();
  *   get:
  *     summary: Get all users
  *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
  *     responses:
  *       200:
  *         description: List of users
@@ -22,7 +25,7 @@ const router: Router = Router();
  *               items:
  *                 $ref: '#/components/schemas/User'
  */
-router.get('/', async (req: Request, res: Response): Promise<void> => {
+router.get('/', authenticateToken, async (req: Request, res: Response): Promise<void> => {
   try {
     const users = await prisma.user.findMany({
       orderBy: { createdAt: 'desc' },
@@ -68,6 +71,7 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
  */
 router.get(
   '/:id',
+  authenticateToken,
   validateRequest({ params: userParamsSchema }),
   async (req: Request, res: Response): Promise<void> => {
     try {
@@ -149,10 +153,10 @@ router.post(
       });
       
       if (existingUser) {
-        res.status(400).json({
+        res.status(409).json({
           error: {
             message: 'Email already exists',
-            status: 400,
+            status: 409,
           },
         });
         return;
@@ -227,6 +231,7 @@ router.post(
  */
 router.put(
   '/:id',
+  authenticateToken,
   validateRequest({ params: userParamsSchema, body: updateUserSchema }),
   async (req: Request, res: Response): Promise<void> => {
     try {
@@ -350,6 +355,7 @@ router.put(
  */
 router.delete(
   '/:id',
+  authenticateToken,
   validateRequest({ params: userParamsSchema }),
   async (req: Request, res: Response): Promise<void> => {
     try {

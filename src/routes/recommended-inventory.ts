@@ -1,4 +1,5 @@
 import { Router, Request, Response } from 'express';
+import { authenticateToken } from '../middleware/auth';
 import { prisma } from '../lib/prisma';
 
 const router: Router = Router();
@@ -26,7 +27,7 @@ const router: Router = Router();
  *               items:
  *                 $ref: '#/components/schemas/RecommendedInventoryItem'
  */
-router.get('/', async (req: Request, res: Response): Promise<void> => {
+router.get('/', authenticateToken, async (req: Request, res: Response): Promise<void> => {
   try {
     const includeOptional = req.query.includeOptional !== 'false';
     
@@ -93,10 +94,20 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.post('/:id/create-inventory', async (req: Request, res: Response): Promise<void> => {
+router.post('/:id/create-inventory', authenticateToken, async (req: Request, res: Response): Promise<void> => {
   try {
+    if (!req.user) {
+      res.status(401).json({
+        error: {
+          message: 'User not authenticated',
+          status: 401,
+        },
+      });
+      return;
+    }
+
     const { id } = req.params;
-    const { quantity, customExpirationDate } = req.body || {};
+    const { quantity, customExpirationDate, homeId } = req.body || {};
     
     // Find the recommended item
     const recommendedItem = await prisma.recommendedInventoryItem.findUnique({
@@ -128,6 +139,7 @@ router.post('/:id/create-inventory', async (req: Request, res: Response): Promis
         name: recommendedItem.name,
         quantity: quantity || recommendedItem.quantity,
         expirationDate,
+        homeId: homeId,
       },
     });
     

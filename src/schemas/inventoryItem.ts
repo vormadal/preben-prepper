@@ -8,7 +8,6 @@ export const createInventoryItemSchema = z.object({
     const parsedDate = new Date(date);
     return !isNaN(parsedDate.getTime());
   }, 'Invalid date format'),
-  userId: z.number().int().min(1, 'User ID is required'),
 });
 
 export const updateInventoryItemSchema = z.object({

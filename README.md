@@ -1,30 +1,63 @@
 # Preben Prepper Backend API
 
-A simple REST API built with TypeScript and Express.js following modern best practices.
+A comprehensive REST API built with TypeScript and Express.js for home inventory management with JWT authentication.
 
 ## Features
 
 - **TypeScript** for type safety
 - **Express.js** for the web framework
+- **JWT Authentication** with token-based security
+- **Prisma ORM** with PostgreSQL database
 - **Swagger/OpenAPI** documentation
 - **Zod** for request validation
+- **Rate Limiting** for API protection
 - **CORS** and **Helmet** for security
 - **Morgan** for logging
-- **Prisma** ready for database integration
+- **bcrypt** for password hashing
+
+## Security Features
+
+- ✅ JWT token-based authentication
+- ✅ Password hashing with bcrypt
+- ✅ Rate limiting (100 req/15min general, 5 req/15min auth)
+- ✅ Input validation and sanitization
+- ✅ CORS and Helmet security headers
+- ✅ Protected routes requiring authentication
+- ✅ SQL injection protection via Prisma ORM
 
 ## Getting Started
+
+### Prerequisites
+- Node.js (v18 or higher)
+- PostgreSQL database
+- npm or yarn
+
+### Installation
 
 1. Install dependencies:
    ```bash
    npm install
    ```
 
-2. Copy environment file:
+2. Set up environment variables:
    ```bash
    copy .env.example .env
    ```
+   
+   Edit `.env` file with your configuration (see `ENV_VARS.md` for details):
+   ```env
+   DATABASE_URL="postgresql://username:password@localhost:5432/preben_prepper"
+   JWT_SECRET="your-super-secure-jwt-secret-key"
+   JWT_EXPIRES_IN="7d"
+   PORT=3000
+   ```
 
-3. Start development server:
+3. Set up the database:
+   ```bash
+   npm run db
+   ```
+
+4. Start development server:
    ```bash
    npm run dev
    ```

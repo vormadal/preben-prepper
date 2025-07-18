@@ -9,6 +9,7 @@
 - Components should be optimized for mobile over desktop
 - Jest and React Testing Library for testing
 - Kiota to generate the API client from http://localhost:3000/api-docs.json
+- The frontend project is not responsible for authentication or authorization. It should only hold JWT token from the backend, and redirect traffic properly to the backend API.
 
 ## Backend Project
 - Is located in the `./` folder.
@@ -21,6 +22,7 @@
 - Zod for request validation
 - Jest for testing
 - when making changes to the backend, ensure that the OpenAPI spec is updated as well
+- authorization and authentication should be handled by the backend only.
 
 ## Coding Standards
 - Use TypeScript strict mode
@@ -45,3 +47,9 @@
 - use playwright for end-to-end testing
 - tests should cover critical user flows
 - test project is located in the `e2e` directory
+
+## integration tests
+- use jest with supertest to run integration tests on the backend API
+- use the `test` directory for integration tests
+- ensure that integration tests cover all API endpoints
+- use and create test data in the `test/test-data` directory

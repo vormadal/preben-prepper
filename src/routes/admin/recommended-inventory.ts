@@ -1,5 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { validateRequest } from '../../middleware/validation';
+import { authenticateToken } from '../../middleware/auth';
 import { 
   createRecommendedInventoryItemSchema, 
   updateRecommendedInventoryItemSchema, 
@@ -25,7 +26,7 @@ const router: Router = Router();
  *               items:
  *                 $ref: '#/components/schemas/RecommendedInventoryItem'
  */
-router.get('/', async (req: Request, res: Response): Promise<void> => {
+router.get('/', authenticateToken, async (req: Request, res: Response): Promise<void> => {
   try {
     const items = await prisma.recommendedInventoryItem.findMany({
       orderBy: { createdAt: 'desc' },
@@ -70,6 +71,7 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
  */
 router.get(
   '/:id',
+  authenticateToken,
   validateRequest({ params: recommendedInventoryItemParamsSchema }),
   async (req: Request, res: Response): Promise<void> => {
     try {
@@ -154,6 +156,7 @@ router.get(
  */
 router.post(
   '/',
+  authenticateToken,
   validateRequest({ body: createRecommendedInventoryItemSchema }),
   async (req: Request, res: Response): Promise<void> => {
     try {
@@ -242,6 +245,7 @@ router.post(
  */
 router.put(
   '/:id',
+  authenticateToken,
   validateRequest({ params: recommendedInventoryItemParamsSchema, body: updateRecommendedInventoryItemSchema }),
   async (req: Request, res: Response): Promise<void> => {
     try {
@@ -312,6 +316,7 @@ router.put(
  */
 router.delete(
   '/:id',
+  authenticateToken,
   validateRequest({ params: recommendedInventoryItemParamsSchema }),
   async (req: Request, res: Response): Promise<void> => {
     try {

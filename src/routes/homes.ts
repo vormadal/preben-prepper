@@ -1,15 +1,13 @@
-import { Router, Request, Response } from 'express';
+import { Request, Response, Router } from 'express';
+import { z } from 'zod';
+import { prisma } from '../lib/prisma';
+import { authenticateToken } from '../middleware/auth';
 import { validateRequest } from '../middleware/validation';
 import {
   createHomeSchema,
-  updateHomeSchema,
-  homeParamsSchema,
   homeAccessSchema,
-  updateHomeAccessSchema,
-  homeAccessParamsSchema
+  homeParamsSchema
 } from '../schemas/home';
-import { prisma } from '../lib/prisma';
-import { z } from 'zod';
 
 const router: Router = Router();
 
@@ -19,16 +17,11 @@ const router: Router = Router();
  *   get:
  *     summary: Get all homes where user has access
  *     tags: [Homes]
- *     parameters:
- *       - in: query
- *         name: userId
- *         required: true
- *         schema:
- *           type: integer
- *         description: User ID to get homes for
+ *     security:
+ *       - bearerAuth: []
  *     responses:
  *       200:
- *         description: List of homes
+ *         description: List of homes user has access to
  *         content:
  *           application/json:
  *             schema:
@@ -36,19 +29,19 @@ const router: Router = Router();
  *               items:
  *                 $ref: '#/components/schemas/Home'
  */
-router.get('/', async (req: Request, res: Response): Promise<void> => {
+router.get('/', authenticateToken, async (req: Request, res: Response): Promise<void> => {
   try {
-    const userId = Number(req.query.userId);
-    
-    if (!userId || isNaN(userId)) {
-      res.status(400).json({
+    if (!req.user) {
+      res.status(401).json({
         error: {
-          message: 'Valid user ID is required',
-          status: 400,
+          message: 'User not authenticated',
+          status: 401,
         },
       });
       return;
     }
+
+    const userId = req.user.userId;
 
     const homes = await prisma.home.findMany({
       where: {
@@ -96,6 +89,8 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
  *   get:
  *     summary: Get home by ID
  *     tags: [Homes]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -103,12 +98,6 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
  *         schema:
  *           type: integer
  *         description: Home ID
- *       - in: query
- *         name: userId
- *         required: true
- *         schema:
- *           type: integer
- *         description: User ID requesting access
  *     responses:
  *       200:
  *         description: Home found
@@ -131,21 +120,22 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
  */
 router.get(
   '/:id',
+  authenticateToken,
   validateRequest({ params: homeParamsSchema }),
   async (req: Request, res: Response): Promise<void> => {
     try {
-      const { id } = req.params;
-      const userId = Number(req.query.userId);
-      
-      if (!userId || isNaN(userId)) {
-        res.status(400).json({
+      if (!req.user) {
+        res.status(401).json({
           error: {
-            message: 'Valid user ID is required',
-            status: 400,
+            message: 'User not authenticated',
+            status: 401,
           },
         });
         return;
       }
+
+      const { id } = req.params;
+      const userId = req.user.userId;
 
       const home = await prisma.home.findFirst({
         where: {
@@ -204,6 +194,8 @@ router.get(
  *   post:
  *     summary: Create a new home
  *     tags: [Homes]
+ *     security:
+ *       - bearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -212,14 +204,10 @@ router.get(
  *             type: object
  *             required:
  *               - name
- *               - ownerId
  *             properties:
  *               name:
  *                 type: string
  *                 description: Home name
- *               ownerId:
- *                 type: integer
- *                 description: User ID of the home owner
  *               numberOfAdults:
  *                 type: integer
  *                 description: Number of adults in the home
@@ -248,25 +236,22 @@ router.get(
  */
 router.post(
   '/',
-  validateRequest({ body: createHomeSchema.extend({ ownerId: z.number().int().min(1, 'Owner ID is required') }) }),
+  authenticateToken,
+  validateRequest({ body: createHomeSchema }),
   async (req: Request, res: Response): Promise<void> => {
     try {
-      const { name, numberOfAdults, numberOfChildren, numberOfPets, ownerId } = req.body;
-      
-      // Check if owner exists
-      const owner = await prisma.user.findUnique({
-        where: { id: ownerId },
-      });
-      
-      if (!owner) {
-        res.status(400).json({
+      if (!req.user) {
+        res.status(401).json({
           error: {
-            message: 'Owner user not found',
-            status: 400,
+            message: 'User not authenticated',
+            status: 401,
           },
         });
         return;
       }
+
+      const { name, numberOfAdults, numberOfChildren, numberOfPets } = req.body;
+      const ownerId = req.user.userId;
       
       const newHome = await prisma.home.create({
         data: {
@@ -311,6 +296,8 @@ router.post(
  *   post:
  *     summary: Grant access to a home (owner or admin only)
  *     tags: [Homes]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -318,12 +305,6 @@ router.post(
  *         schema:
  *           type: integer
  *         description: Home ID
- *       - in: query
- *         name: requesterId
- *         required: true
- *         schema:
- *           type: integer
- *         description: User ID making the request
  *     requestBody:
  *       required: true
  *       content:
@@ -351,22 +332,23 @@ router.post(
  */
 router.post(
   '/:id/access',
+  authenticateToken,
   validateRequest({ params: homeParamsSchema, body: homeAccessSchema }),
   async (req: Request, res: Response): Promise<void> => {
     try {
-      const { id } = req.params;
-      const requesterId = Number(req.query.requesterId);
-      const { userId, role } = req.body;
-      
-      if (!requesterId || isNaN(requesterId)) {
-        res.status(400).json({
+      if (!req.user) {
+        res.status(401).json({
           error: {
-            message: 'Valid requester ID is required',
-            status: 400,
+            message: 'User not authenticated',
+            status: 401,
           },
         });
         return;
       }
+
+      const { id } = req.params;
+      const requesterId = req.user.userId;
+      const { userId, role } = req.body;
       
       // Check if requester is owner or admin
       const home = await prisma.home.findFirst({

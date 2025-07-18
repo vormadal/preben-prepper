@@ -1,5 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { validateRequest } from '../middleware/validation';
+import { authenticateToken } from '../middleware/auth';
 import { createInventoryItemSchema, updateInventoryItemSchema, homeInventoryParamsSchema } from '../schemas/inventoryItem';
 import { prisma } from '../lib/prisma';
 
@@ -59,20 +60,20 @@ async function checkHomeAccess(userId: number, homeId: number): Promise<boolean>
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.get('/', async (req: Request, res: Response): Promise<void> => {
+router.get('/', authenticateToken, async (req: Request, res: Response): Promise<void> => {
   try {
-    const userId = Number(req.query.userId);
-    const homeId = Number(req.params.homeId);
-    
-    if (!userId || isNaN(userId)) {
-      res.status(400).json({
+    if (!req.user) {
+      res.status(401).json({
         error: {
-          message: 'Valid user ID is required',
-          status: 400,
+          message: 'User not authenticated',
+          status: 401,
         },
       });
       return;
     }
+
+    const userId = req.user.userId;
+    const homeId = Number(req.params.homeId);
 
     if (!homeId || isNaN(homeId)) {
       res.status(400).json({
@@ -166,22 +167,23 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
  */
 router.get(
   '/:id',
+  authenticateToken,
   validateRequest({ params: homeInventoryParamsSchema }),
   async (req: Request, res: Response): Promise<void> => {
     try {
-      const { id } = req.params;
-      const homeId = Number(req.params.homeId);
-      const userId = Number(req.query.userId);
-      
-      if (!userId || isNaN(userId)) {
-        res.status(400).json({
+      if (!req.user) {
+        res.status(401).json({
           error: {
-            message: 'Valid user ID is required',
-            status: 400,
+            message: 'User not authenticated',
+            status: 401,
           },
         });
         return;
       }
+
+      const { id } = req.params;
+      const homeId = Number(req.params.homeId);
+      const userId = req.user.userId;
 
       if (!homeId || isNaN(homeId)) {
         res.status(400).json({
@@ -301,21 +303,23 @@ router.get(
  */
 router.post(
   '/',
+  authenticateToken,
   validateRequest({ body: createInventoryItemSchema }),
   async (req: Request, res: Response): Promise<void> => {
     try {
-      const { name, quantity, expirationDate, userId } = req.body;
-      const homeId = Number(req.params.homeId);
-      
-      if (!userId || isNaN(userId)) {
-        res.status(400).json({
+      if (!req.user) {
+        res.status(401).json({
           error: {
-            message: 'Valid user ID is required',
-            status: 400,
+            message: 'User not authenticated',
+            status: 401,
           },
         });
         return;
       }
+
+      const { name, quantity, expirationDate } = req.body;
+      const homeId = Number(req.params.homeId);
+      const userId = req.user.userId;
 
       if (!homeId || isNaN(homeId)) {
         res.status(400).json({
@@ -436,23 +440,24 @@ router.post(
  */
 router.put(
   '/:id',
+  authenticateToken,
   validateRequest({ params: homeInventoryParamsSchema, body: updateInventoryItemSchema }),
   async (req: Request, res: Response): Promise<void> => {
     try {
-      const { id } = req.params;
-      const homeId = Number(req.params.homeId);
-      const userId = Number(req.query.userId);
-      const { name, quantity, expirationDate } = req.body;
-      
-      if (!userId || isNaN(userId)) {
-        res.status(400).json({
+      if (!req.user) {
+        res.status(401).json({
           error: {
-            message: 'Valid user ID is required',
-            status: 400,
+            message: 'User not authenticated',
+            status: 401,
           },
         });
         return;
       }
+
+      const { id } = req.params;
+      const homeId = Number(req.params.homeId);
+      const userId = req.user.userId;
+      const { name, quantity, expirationDate } = req.body;
 
       if (!homeId || isNaN(homeId)) {
         res.status(400).json({
@@ -564,22 +569,23 @@ router.put(
  */
 router.delete(
   '/:id',
+  authenticateToken,
   validateRequest({ params: homeInventoryParamsSchema }),
   async (req: Request, res: Response): Promise<void> => {
     try {
-      const { id } = req.params;
-      const homeId = Number(req.params.homeId);
-      const userId = Number(req.query.userId);
-      
-      if (!userId || isNaN(userId)) {
-        res.status(400).json({
+      if (!req.user) {
+        res.status(401).json({
           error: {
-            message: 'Valid user ID is required',
-            status: 400,
+            message: 'User not authenticated',
+            status: 401,
           },
         });
         return;
       }
+
+      const { id } = req.params;
+      const homeId = Number(req.params.homeId);
+      const userId = req.user.userId;
 
       if (!homeId || isNaN(homeId)) {
         res.status(400).json({
